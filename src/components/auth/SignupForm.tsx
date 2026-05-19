@@ -36,7 +36,7 @@ export function SignupForm({ onSwitchTab }: { onSwitchTab: () => void }) {
 
   const onSubmit = async (values: SignupValues) => {
     setSubmitError(null);
-    const redirectTo = `${window.location.origin}/user-dashboard`;
+    const redirectTo = `${window.location.origin}/dashboard/airports`;
     const { error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
@@ -55,10 +55,10 @@ export function SignupForm({ onSwitchTab }: { onSwitchTab: () => void }) {
     setSuccess(true);
     localStorage.setItem("userRole", "USER");
     setTimeout(() => {
-      navigate({ to: "/user-dashboard" as never }).catch(() => {
-        window.location.href = "/user-dashboard";
+      navigate({ to: "/dashboard/airports" as never }).catch(() => {
+        window.location.href = "/dashboard/airports";
       });
-    }, 2500);
+    }, 2000);
   };
 
   if (success) {
