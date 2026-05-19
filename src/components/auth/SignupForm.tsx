@@ -103,7 +103,7 @@ export function SignupForm({ onSwitchTab }: { onSwitchTab: () => void }) {
             id="su-name"
             type="text"
             autoComplete="name"
-            placeholder="John Doe"
+            placeholder="Your Name"
             className={fieldInput}
             {...register("fullName")}
           />
