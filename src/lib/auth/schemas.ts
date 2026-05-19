@@ -18,12 +18,17 @@ export const signupSchema = z
       .regex(/[0-9]/, "Password must have 8+ chars, 1 uppercase, 1 number, 1 special char")
       .regex(/[^A-Za-z0-9]/, "Password must have 8+ chars, 1 uppercase, 1 number, 1 special char"),
     confirmPassword: z.string(),
-    termsAgreed: z.literal(true, { message: "Please agree to the terms" } as never),
+    termsAgreed: z.boolean(),
+  })
+  .refine((d) => d.termsAgreed === true, {
+    message: "Please agree to the terms",
+    path: ["termsAgreed"],
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
 export type SignupValues = z.infer<typeof signupSchema>;
 
 export function passwordStrength(pwd: string): { score: 0 | 1 | 2 | 3; label: string } {
