@@ -87,6 +87,22 @@ export const getAirport = createServerFn({ method: "POST" })
     };
   });
 
+export const getAirportByCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ code: z.string().trim().length(3).regex(/^[A-Z]{3}$/) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase
+      .from("airports")
+      .select("*")
+      .eq("iata_code", data.code)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
 export const createAirport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => airportInputSchema.parse(d))
