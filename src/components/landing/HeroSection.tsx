@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
+import { Link } from "@tanstack/react-router";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectFade, Pagination } from "swiper/modules";
 import { SquareButton } from "./SquareButton";
+
 import boardingGate from "@/assets/hero-boarding-gate.jpg";
 import groundStaff from "@/assets/hero-ground-staff.jpg";
 import flightBoard from "@/assets/hero-flight-board.jpg";
@@ -85,11 +87,12 @@ export function HeroSection() {
           </motion.p>
           <div className="mt-7 flex flex-col sm:flex-row gap-4">
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: 0.5 }}>
-              <SquareButton>Explore Platform</SquareButton>
+              <Link to="/auth"><SquareButton>Get Started</SquareButton></Link>
             </motion.div>
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: 0.6 }}>
               <SquareButton variant="outline">Learn More</SquareButton>
             </motion.div>
+
           </div>
           <motion.p
             initial={{ opacity: 0 }}
