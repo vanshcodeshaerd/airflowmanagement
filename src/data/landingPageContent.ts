@@ -1,3 +1,5 @@
+import boardingPassImg from "@/assets/boarding-pass.jpg";
+
 export const features = [
   {
     title: "Passenger Management",
@@ -17,7 +19,7 @@ export const features = [
   {
     title: "Boarding Pass Storage",
     description: "Keep digital boarding passes ready and accessible.",
-    image: "https://images.unsplash.com/photo-1583416750470-965b2707b355?w=600&q=80",
+    image: boardingPassImg,
   },
   {
     title: "Real-time Updates",
