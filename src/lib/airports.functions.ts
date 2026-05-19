@@ -87,19 +87,6 @@ export const getAirport = createServerFn({ method: "POST" })
     };
   });
 
-export const getCurrentRole = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    if (error) throw new Error(error.message);
-    const roles = (data ?? []).map((r) => r.role as string);
-    return { role: roles.includes("admin") ? "admin" : "user", roles };
-  });
-
 export const createAirport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => airportInputSchema.parse(d))

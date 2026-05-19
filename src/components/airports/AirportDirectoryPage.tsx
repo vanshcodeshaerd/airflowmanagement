@@ -6,9 +6,9 @@ import { ArrowLeft, LayoutGrid, List, Plus, LogOut } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   listAirports,
-  getCurrentRole,
   deleteAirport as deleteAirportFn,
 } from "@/lib/airports.functions";
+import { getCurrentRole } from "@/lib/airport-role.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Airport, SortKey, ViewMode, AirportCategory, AirportStatus } from "./types";
 import { FilterBar } from "./FilterBar";
