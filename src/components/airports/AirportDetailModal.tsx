@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { X, Loader2, Navigation, MapPin } from "lucide-react";
 import { getAirport } from "@/lib/airports.functions";
 import { getDirectionsUrl, getPinUrl } from "./utils";
+import { AirportMap } from "./AirportMap";
 
 interface Props {
   id: string;
