@@ -1,74 +1,107 @@
 ## Goal
-Build a single `/auth` page that handles both Login and Signup, matching the spec's design (square buttons, navy/teal palette, Playfair/Inter/Poppins, framer-motion animations, split layout). Admin uses one predefined credential; regular users go through real signup/login backed by the database.
 
-## Auth model
-- **Admin (hardcoded):** single predefined credential checked client-side before hitting auth backend.
-  - Email: `admin_demo@airportms.com`
-  - Password: `Demo123!ADMIN2024`
-  - On match: set `localStorage.userRole = "ADMIN"`, navigate to `/admin-dashboard`. No account is created in the database.
-- **Users (real):** Lovable Cloud (email/password + Google).
-  - Signup creates a real `auth.users` row plus a `profiles` row with full_name.
-  - Login uses `supabase.auth.signInWithPassword`.
-  - Google sign-in via the Lovable broker (`lovable.auth.signInWithOAuth("google", ...)`).
-  - On success: `localStorage.userRole = "USER"`, navigate to `/user-dashboard`.
+Build the Airport Selection & Directory page rendered at two routes that share one component with role-based behavior:
 
-Note: redirect targets (`/admin-dashboard`, `/user-dashboard`) will 404 until built later, as requested.
+- `/dashboard/airports` — regular users browse, filter, search, select.
+- `/admin/airports` — admins additionally add, edit, delete, and bulk-manage airports.
 
-## Backend (Lovable Cloud)
-Enable Lovable Cloud, then:
+All airport data lives in the Lovable Cloud database (no mock array in code, no external API).
 
-1. `profiles` table:
-   - `id uuid primary key references auth.users(id) on delete cascade`
-   - `full_name text not null`
-   - `created_at timestamptz default now()`
-2. RLS on `profiles`: users can `select`/`update` their own row.
-3. Trigger `handle_new_user` on `auth.users` insert → inserts into `profiles` using `raw_user_meta_data->>'full_name'`.
-4. Enable Google provider via `supabase--configure_social_auth`.
-5. Enable leaked-password (HIBP) protection.
+## Database (one migration)
 
-No `user_roles` table is created — roles aren't stored server-side because admin is hardcoded and all DB-backed users are regular users. This is documented as an accepted tradeoff in the security memory.
+Tables in `public`:
 
-## Frontend
+1. `airports`
+   - `id uuid pk default gen_random_uuid()`
+   - `iata_code text unique not null` (3 chars), `icao_code text unique` (4 chars)
+   - `airport_name text not null`, `city text not null`, `state text not null`, `country text default 'India'`
+   - `latitude numeric(10,6) not null`, `longitude numeric(10,6) not null`
+   - `operator text`, `total_gates int`, `total_terminals int`, `total_runways int`
+   - `category text check in ('Domestic','International','Private') default 'Domestic'`
+   - `status text check in ('Active','Under Construction','Proposed') default 'Active'`
+   - `annual_passengers_million numeric(10,2)`
+   - `contact_phone text`, `contact_email text`, `website_url text`, `description text`
+   - `is_active boolean default true`
+   - `created_at`, `updated_at` timestamptz + `update_updated_at_column()` trigger
 
-### Route
-- New file `src/routes/auth.tsx` → path `/auth`.
-- `head()` with title, meta description, keywords, `robots: noindex, follow`, canonical, og tags, JSON-LD WebApplication.
-- Update Header's "Get Started" button + Hero CTAs to `<Link to="/auth">`.
+2. `airport_services` — `airport_id` fk cascade, `service_name text`, `is_available bool`, unique (airport_id, service_name).
 
-### Components (`src/components/auth/`)
-- `AuthPage.tsx` — split layout (left: bg image w/ gradient overlay & subtle zoom; right: form container).
-- `AuthHeader.tsx` — back-to-home + help link.
-- `FormTabs.tsx` — Login / Sign Up toggle with sliding teal underline.
-- `LoginForm.tsx` — email, password (eye toggle), remember-me, forgot-password link, submit, error alert with shake.
-- `SignupForm.tsx` — full name, email, password (with strength bar), confirm password (match indicator), terms checkbox, submit, success state.
-- `SocialAuthButtons.tsx` — Google button + tab-switch link.
-- `PasswordStrengthIndicator.tsx` — colored fill bar (weak/medium/strong).
-- `FormErrorAlert.tsx`, `SuccessMessage.tsx`.
+3. `airport_airlines` — `airport_id` fk cascade, `airline_code`, `airline_name`, `is_active`.
 
-### Validation
-- react-hook-form + zod schemas matching spec (email RFC, password ≥8 with uppercase/number/special for signup; ≥6 for login; name 3–50; passwords match; terms required).
+4. Role infrastructure (since admin needs server-enforced privileges, not a client localStorage check):
+   - `app_role` enum (`admin`, `user`)
+   - `user_roles (user_id uuid → auth.users, role app_role, unique(user_id, role))`
+   - `has_role(_user_id uuid, _role app_role)` security-definer function
+   - The hardcoded demo admin (`admin_demo@airportms.com`) stays as a client-side shortcut for the *UI* only. Real DB writes require a real authenticated user with an `admin` row in `user_roles`. This is documented in code; the demo admin can browse/CRUD only in-memory via UI but server rejects writes unless they have an admin role. We'll seed one real admin role row tied to whichever user first signs up with the configured admin email (handled by trigger on `auth.users` insert).
 
-### Styling
-- All buttons `border-radius: 0`.
-- Tokens added to `src/styles.css` for the auth-specific colors (or reuse existing navy/teal/accent tokens — extend if missing).
-- Fonts: Playfair Display headings, Inter labels/body, Poppins buttons/links.
-- framer-motion: page slide-in, staggered fields, tab crossfade, error shake, success slide-up, bg zoom loop.
+### RLS
 
-### Asset
-- Generate one airport-terminal background image to `src/assets/auth-bg.jpg` (1600×1200, opacity overlay handled in CSS).
+- `airports`, `airport_services`, `airport_airlines`:
+  - `SELECT` to `authenticated` and `anon` where `is_active = true` (public directory — needed because user dashboard must read).
+  - `INSERT / UPDATE / DELETE` only when `has_role(auth.uid(), 'admin')`.
+- `user_roles`: select own rows; only admins can insert/update/delete (handled via has_role).
 
-## Files created/changed
-- create: `src/routes/auth.tsx`
-- create: `src/components/auth/*` (8 files listed above)
-- create: `src/lib/auth/validators.ts`, `src/lib/auth/adminCheck.ts`
-- create: `src/assets/auth-bg.jpg`
-- edit: `src/components/landing/Header.tsx`, `src/components/landing/HeroSection.tsx`, any other "Get Started" CTAs → link to `/auth`
-- edit: `src/styles.css` (auth tokens if needed)
-- DB migration: `profiles` table + RLS + trigger
-- Config: enable Google provider, enable HIBP
+### Seed
 
-## Technical notes
-- Lovable Cloud handles password hashing, sessions, tokens — the spec's "no real backend, use setTimeout" is replaced with real auth per your direction.
-- Admin credential is in client code (intentional, per your request). Anyone reading the bundle can see it. This is acceptable for a demo; for production we'd move admin detection server-side via a roles table.
-- Email confirmation will be **disabled** so signup → immediate session → redirect works without an email round-trip (matches the spec's flow).
-- The TanStack `_authenticated` layout pattern is **not** added here since dashboards aren't being built; we'll add it when those pages exist.
+Same migration inserts all ~45 airports from the spec (Andhra Pradesh through West Bengal), plus a default service set for the international/hub airports. Idempotent via `on conflict (iata_code) do nothing`.
+
+## Server functions (`src/lib/airports.functions.ts`)
+
+All use `requireSupabaseAuth` middleware.
+
+- `listAirports({ search?, category?, state?, status?, sort? })` → reads `airports` + aggregated service/airline counts.
+- `getAirport(id)` → full record including services and airlines.
+- `createAirport(input)` — admin only (checks `has_role` server-side).
+- `updateAirport(id, input)` — admin only.
+- `deleteAirport(id)` — admin only.
+- `bulkDeleteAirports(ids[])` — admin only.
+- `getCurrentRole()` → returns `'admin' | 'user'` for UI gating.
+
+Validation with zod (IATA length 3, ICAO length 4, lat/lng bounds, enums for category/status).
+
+## Routing
+
+- `src/routes/_authenticated.tsx` — pathless layout; `beforeLoad` checks `supabase.auth.getUser()` and redirects to `/auth` when missing. Renders `<Outlet />`.
+- `src/routes/_authenticated/dashboard.airports.tsx` → `/dashboard/airports` (user mode).
+- `src/routes/_authenticated/admin.airports.tsx` → `/admin/airports` (calls `getCurrentRole`; if not admin, redirects to user route).
+
+Both routes render `<AirportDirectoryPage mode="user" | "admin" />`.
+
+Each route sets its own `head()` with the title/description/keywords from the spec and `robots: noindex` (auth-gated content).
+
+## Components (`src/components/airports/`)
+
+- `AirportDirectoryPage.tsx` — page shell: header, breadcrumb, back button, filter bar, results summary with count-up, view toggle, grid/list, pagination, modal mount, admin controls mount.
+- `FilterBar.tsx` — search input, category / state / status / sort dropdowns (shadcn Select), "Clear All" button. Controlled by `useAirportFilter` hook; all controls are square (radius 0) using existing `SquareButton` styling tokens.
+- `AirportCard.tsx` — single card with IATA, name, city/state, gates/terminals/passengers grid, coords, operator, status badge, action buttons. Variants: `user` (Select + View Details), `admin` (View + Edit + Delete + selection checkbox).
+- `AirportGrid.tsx` — responsive 1/2/3 column grid with framer-motion stagger.
+- `AirportListByState.tsx` — collapsible state-grouped list view.
+- `AirportDetailModal.tsx` — Dialog with full record, services, airlines.
+- `AirportFormModal.tsx` — admin add/edit form (react-hook-form + zod) covering every column + services checkboxes.
+- `DeleteConfirmDialog.tsx` — admin destructive confirm.
+- `AdminBulkBar.tsx` — appears when selection > 0; bulk delete + status change.
+- `Pagination.tsx` — local component (15/25/50 per page).
+
+## Hooks (`src/hooks/airports/`)
+
+- `useAirportData.ts` — wraps `useQuery(listAirports, …)` with filter state in query key.
+- `useAirportFilter.ts` — state + setters for search/category/state/status/sort/page/perPage/view.
+- `useCurrentRole.ts` — `useQuery(getCurrentRole)`.
+
+## Animations
+
+Framer Motion: header fade+slide, filter bar delayed fade, count-up via `useMotionValue`, card stagger (80ms), hover lift, modal scale 0.9→1, filter swap fade out/in. Respect `prefers-reduced-motion`.
+
+## Styling
+
+- Reuse existing tokens (`--navy`, `--accent`, `--accent-strong`, `--sky-soft`) from `src/styles.css`. Add `--success`, `--warning`, `--danger`, `--info` semantic tokens if not already present, used for badges (Domestic/International/Private + status). No raw hex in components.
+- All buttons square via existing `SquareButton` or `rounded-none` variants.
+- Fonts Playfair / Inter / Poppins already configured.
+
+## What's intentionally out of scope
+
+- CSV import/export (spec mentions, but I'll stub the buttons as "coming soon" unless you want them now).
+- Heliports / private airport seed beyond category placeholder.
+- Schema.org LocalBusiness JSON-LD per airport (page is noindex, low value).
+
+Confirm and I'll proceed; if you want CSV import/export included, say so before approving.
