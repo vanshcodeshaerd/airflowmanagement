@@ -320,12 +320,12 @@ function QuickStat({
   label: string;
 }) {
   return (
-    <div className="text-center">
-      <div className="inline-flex w-9 h-9 items-center justify-center text-accent bg-white border border-border">
+    <div className="text-center bg-white/15 backdrop-blur-sm border border-white/20 py-3 px-2">
+      <div className="inline-flex w-9 h-9 items-center justify-center text-white bg-white/15">
         {icon}
       </div>
-      <div className="font-display font-extrabold text-primary text-lg mt-2">{value}</div>
-      <div className="text-[11px] text-muted-foreground font-ui">{label}</div>
+      <div className="font-display font-extrabold text-white text-lg mt-2">{value}</div>
+      <div className="text-[11px] text-white/80 font-ui">{label}</div>
     </div>
   );
 }
