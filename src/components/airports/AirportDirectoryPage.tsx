@@ -257,7 +257,12 @@ export function AirportDirectoryPage({ mode }: Props) {
                   onView={() => setDetailId(a.id)}
                   onEdit={() => setEditAirport(a)}
                   onDelete={() => setDeleteAirport(a)}
-                  onSelect={() => toast.success(`Selected ${a.iata_code} — ${a.airport_name}`)}
+                  onSelect={() =>
+                    navigate({
+                      to: "/airport/$code/dashboard" as never,
+                      params: { code: a.iata_code } as never,
+                    })
+                  }
                 />
               </motion.div>
             ))}
@@ -285,7 +290,12 @@ export function AirportDirectoryPage({ mode }: Props) {
                           onView={() => setDetailId(a.id)}
                           onEdit={() => setEditAirport(a)}
                           onDelete={() => setDeleteAirport(a)}
-                          onSelect={() => toast.success(`Selected ${a.iata_code}`)}
+                          onSelect={() =>
+                            navigate({
+                              to: "/airport/$code/dashboard" as never,
+                              params: { code: a.iata_code } as never,
+                            })
+                          }
                         />
                       ))}
                   </div>
