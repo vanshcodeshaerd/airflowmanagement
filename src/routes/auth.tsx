@@ -78,7 +78,7 @@ function AuthPage() {
                 Manage Your Flight.<br />Own Your Journey.
               </h2>
               <p className="mt-3 text-sm text-white/85 font-sans">
-                Secure access to your bookings, boarding passes, and travel documents — all in one place.
+                Secure access to your bookings, boarding passes, and travel documents, all in one place.
               </p>
             </div>
           </div>
