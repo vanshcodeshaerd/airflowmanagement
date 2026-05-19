@@ -35,7 +35,7 @@ export const stats = [
   { value: 2500000, display: (n: number) => `${(n / 1_000_000).toFixed(1)}M+`, label: "Passengers Managed", icon: "Users" as const },
   { value: 1250, display: (n: number) => `${Math.round(n).toLocaleString()}+`, label: "Airlines Integrated", icon: "Plane" as const },
   { value: 98, display: (n: number) => `${Math.round(n)}%`, label: "User Satisfaction", icon: "Star" as const },
-  { value: 0, display: () => "24/7", label: "Customer Support", icon: "Headphones" as const, static: true },
+  { value: 0, display: (_n: number) => "24/7", label: "Customer Support", icon: "Headphones" as const, static: true },
 ];
 
 export const gallery = [
