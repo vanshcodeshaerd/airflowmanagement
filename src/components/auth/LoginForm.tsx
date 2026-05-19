@@ -28,14 +28,7 @@ export function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
 
   const onSubmit = async (values: LoginValues) => {
     setSubmitError(null);
-    // Admin short-circuit (hardcoded credential, demo only)
-    if (isAdminCredential(values.email, values.password)) {
-      localStorage.setItem("userRole", "ADMIN");
-      navigate({ to: "/admin-dashboard" as never }).catch(() => {
-        window.location.href = "/admin-dashboard";
-      });
-      return;
-    }
+    const isDemoAdmin = isAdminCredential(values.email, values.password);
     const { error } = await supabase.auth.signInWithPassword({
       email: values.email,
       password: values.password,
@@ -44,9 +37,10 @@ export function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
       setSubmitError("Invalid email or password. Please try again.");
       return;
     }
-    localStorage.setItem("userRole", "USER");
-    navigate({ to: "/user-dashboard" as never }).catch(() => {
-      window.location.href = "/user-dashboard";
+    localStorage.setItem("userRole", isDemoAdmin ? "ADMIN" : "USER");
+    const dest = isDemoAdmin ? "/admin/airports" : "/dashboard/airports";
+    navigate({ to: dest as never }).catch(() => {
+      window.location.href = dest;
     });
   };
 
