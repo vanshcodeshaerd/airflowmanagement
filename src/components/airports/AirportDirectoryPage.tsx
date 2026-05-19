@@ -260,7 +260,7 @@ export function AirportDirectoryPage({ mode }: Props) {
                   onSelect={() =>
                     navigate({
                       to: "/airport/$code/dashboard" as never,
-                      params: { code: a.iata_code },
+                      params: { code: a.iata_code } as never,
                     })
                   }
                 />
@@ -293,7 +293,7 @@ export function AirportDirectoryPage({ mode }: Props) {
                           onSelect={() =>
                             navigate({
                               to: "/airport/$code/dashboard" as never,
-                              params: { code: a.iata_code },
+                              params: { code: a.iata_code } as never,
                             })
                           }
                         />
