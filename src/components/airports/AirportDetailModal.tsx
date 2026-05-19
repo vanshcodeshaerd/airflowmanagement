@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { X, Loader2, Navigation, MapPin } from "lucide-react";
 import { getAirport } from "@/lib/airports.functions";
 import { getDirectionsUrl, getPinUrl } from "./utils";
+import { AirportMap } from "./AirportMap";
 
 interface Props {
   id: string;
@@ -86,7 +87,15 @@ export function AirportDetailModal({ id, onClose }: Props) {
                 <Row label="Email" value={q.data.airport.contact_email ?? "—"} />
               </dl>
 
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-5 border border-border">
+                <AirportMap
+                  lat={Number(q.data.airport.latitude)}
+                  lng={Number(q.data.airport.longitude)}
+                  label={`${q.data.airport.iata_code} — ${q.data.airport.airport_name}`}
+                />
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
                 <a
                   href={getDirectionsUrl(q.data.airport)}
                   target="_blank"
