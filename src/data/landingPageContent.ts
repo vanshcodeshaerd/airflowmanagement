@@ -40,11 +40,14 @@ export const stats = [
 
 export const gallery = [
   { src: "https://images.unsplash.com/photo-1542296332-2e4473faf563?w=1200&q=80", alt: "Passenger walking through modern airport terminal" },
-  { src: "https://images.unsplash.com/photo-1583500178690-f7eb39f6dba6?w=1200&q=80", alt: "Flight information display board" },
-  { src: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=1200&q=80", alt: "Booking confirmation interface" },
+  { src: "https://images.unsplash.com/photo-1556388158-158ea5ccacbd?w=1200&q=80", alt: "Airline check-in counter" },
+  { src: "https://images.unsplash.com/photo-1583416750470-965b2707b355?w=1200&q=80", alt: "Traveler holding passport and boarding pass" },
   { src: "https://images.unsplash.com/photo-1521727857535-28d2047314ac?w=1200&q=80", alt: "Digital boarding pass on a phone" },
-  { src: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&q=80", alt: "Airplane wing above clouds" },
-  { src: "https://images.unsplash.com/photo-1540339832862-474599807836?w=1200&q=80", alt: "Pilot in modern cockpit" },
+  { src: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&q=80", alt: "Airplane wing above the clouds" },
+  { src: "https://images.unsplash.com/photo-1540339832862-474599807836?w=1200&q=80", alt: "Pilot inside a modern cockpit" },
+  { src: "https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=1200&q=80", alt: "Aircraft on runway at sunset" },
+  { src: "https://images.unsplash.com/photo-1583500178690-f7eb39f6dba6?w=1200&q=80", alt: "Cabin interior with passengers" },
+  { src: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=1200&q=80", alt: "Travel booking on a laptop" },
 ];
 
 export const testimonials = [
