@@ -259,9 +259,9 @@ export function AirportDirectoryPage({ mode }: Props) {
                   onDelete={() => setDeleteAirport(a)}
                   onSelect={() =>
                     navigate({
-                      to: "/airport/$code/dashboard" as never,
-                      params: { code: a.iata_code } as never,
-                    })
+                      to: "/airport/$code/dashboard",
+                      params: { code: a.iata_code },
+                    } as never)
                   }
                 />
               </motion.div>
@@ -292,9 +292,9 @@ export function AirportDirectoryPage({ mode }: Props) {
                           onDelete={() => setDeleteAirport(a)}
                           onSelect={() =>
                             navigate({
-                              to: "/airport/$code/dashboard" as never,
-                              params: { code: a.iata_code } as never,
-                            })
+                              to: "/airport/$code/dashboard",
+                              params: { code: a.iata_code },
+                            } as never)
                           }
                         />
                       ))}
