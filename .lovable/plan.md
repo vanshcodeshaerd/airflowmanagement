@@ -1,31 +1,29 @@
 ## Goal
-Make each airport's location clickable so it opens Google Maps with directions to that specific airport, using its real lat/lng already stored in the database.
-
-## Approach
-No new dependencies, no API key needed — use Google Maps universal URL scheme that works with any user's device/account and auto-uses their current location as the origin:
-
-```
-https://www.google.com/maps/dir/?api=1&destination=<lat>,<lng>&destination_place_id=<IATA>%20<airport_name>
-```
-
-This guarantees a unique destination per airport (lat/lng is unique per row in the `airports` table) and triggers turn-by-turn directions from the user's current location.
+Add a "Customer Support" tile to the bottom Quick Links row on the airport dashboard. Clicking it opens a small modal with four contact options pulled from the airport record.
 
 ## Changes
 
-1. **`src/components/airports/AirportCard.tsx`**
-   - Wrap the location row (city, state + coordinates) in a button/link.
-   - On click: `window.open(mapsUrl, '_blank', 'noopener,noreferrer')`.
-   - Add a small `MapPin` / `Navigation` icon + hover state to signal it's clickable.
-   - `stopPropagation` so it doesn't trigger the card's detail-modal open.
+**1. `src/components/airport-dashboard/SupportModal.tsx`** (new)
+- Lightweight modal (same Framer Motion pattern as `AirportDetailModal`).
+- Receives `airport` prop (for `contact_phone`, `contact_email`, `iata_code`).
+- Four action rows, each a square card:
+  - **Call** — `tel:{contact_phone}`. If phone missing, show "Not available" disabled state.
+  - **Email** — `mailto:{contact_email}?subject=Support request for {IATA}`. Disabled if missing.
+  - **Live Chat** — button that toasts "Live chat coming soon" (no backend yet).
+  - **FAQ / Help** — link to `/help` (stub; if route doesn't exist we use `<a href>` and add a tiny placeholder later or just toast).
+- Icons: `Phone`, `Mail`, `MessageCircle`, `HelpCircle` from lucide-react.
+- Styled consistent with existing modal (white panel, square corners, navy/teal palette).
 
-2. **`src/components/airports/AirportDetailModal.tsx`**
-   - Add a prominent "Get Directions" button in the location section that opens the same Maps URL.
-   - Show the lat/lng as a secondary clickable line opening the airport pin (`maps/search/?api=1&query=<lat>,<lng>`).
-
-3. **`src/components/airports/utils.ts`** (new, tiny)
-   - `getDirectionsUrl(airport)` and `getPinUrl(airport)` helpers so both card and modal stay consistent.
+**2. `src/components/airport-dashboard/AirportDashboard.tsx`** (edit)
+- Add `supportOpen` state.
+- Replace the current "Lost & Found" placeholder with a **Customer Support** tile (icon `Headphones` or `LifeBuoy`) that opens the modal. Keep the existing four-tile grid layout (Directions, Contact Info, Facilities, Customer Support) — Lost & Found can be dropped since it had no behavior, or kept by widening to 5 tiles. I'll keep the grid at 4 by replacing Lost & Found with Customer Support (cleaner, less clutter).
+- Render `<SupportModal airport={airport} open={supportOpen} onClose={...} />` at the bottom.
 
 ## Out of scope
-- No embedded map iframe (avoids needing the Google Maps browser key / referrer setup).
-- No DB changes — lat/lng already exists and is unique per airport.
-- No admin UI changes.
+- No DB changes — we already store `contact_phone` and `contact_email` on `airports`.
+- No real live-chat integration (just a "coming soon" toast).
+- No `/help` page build — FAQ link is a placeholder that toasts.
+
+## Technical notes
+- Pure frontend; no server functions or migrations.
+- Modal uses `sonner` toast (already in the project) for the unavailable channels.

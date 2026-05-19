@@ -8,6 +8,7 @@ import {
   Building,
   Calendar,
   Check,
+  Headphones,
   LayoutGrid,
   LogOut,
   Loader2,
@@ -25,6 +26,7 @@ import { getAirportByCode } from "@/lib/airports.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { getDirectionsUrl } from "@/components/airports/utils";
 import type { Airport } from "@/components/airports/types";
+import { SupportModal } from "./SupportModal";
 
 interface Props {
   code: string;
@@ -39,6 +41,7 @@ export function AirportDashboard({ code }: Props) {
   });
 
   const [now, setNow] = useState(new Date());
+  const [supportOpen, setSupportOpen] = useState(false);
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000 * 30);
     return () => clearInterval(t);
@@ -271,9 +274,19 @@ export function AirportDashboard({ code }: Props) {
             icon={<Calendar className="w-5 h-5" />}
             label="Facilities"
           />
-          <QuickLink icon={<Navigation className="w-5 h-5" />} label="Lost & Found" />
+          <QuickLink
+            icon={<Headphones className="w-5 h-5" />}
+            label="Customer Support"
+            onClick={() => setSupportOpen(true)}
+          />
         </section>
       </main>
+
+      <SupportModal
+        airport={airport}
+        open={supportOpen}
+        onClose={() => setSupportOpen(false)}
+      />
     </div>
   );
 }
@@ -405,11 +418,13 @@ function QuickLink({
   label,
   href,
   external,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   href?: string;
   external?: boolean;
+  onClick?: () => void;
 }) {
   const cls =
     "flex items-center gap-2 bg-white border border-border px-4 py-3 text-primary hover:border-accent hover:text-accent-strong transition rounded-none";
@@ -427,7 +442,7 @@ function QuickLink({
     );
   }
   return (
-    <button className={cls} type="button">
+    <button className={cls} type="button" onClick={onClick}>
       {icon}
       <span className="font-ui font-semibold text-[12px]">{label}</span>
     </button>
