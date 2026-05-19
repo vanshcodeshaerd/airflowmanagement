@@ -125,26 +125,45 @@ export function AirportDashboard({ code }: Props) {
         </div>
       </header>
 
-      {/* Airport info card */}
+      {/* Airport info hero */}
       <motion.section
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
-        className="border-b-2 border-accent bg-gradient-to-b from-sky-soft to-white"
+        className="relative border-b-2 border-accent overflow-hidden bg-primary"
       >
-        <div className="max-w-7xl mx-auto px-5 sm:px-7 py-8 grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
+        {/* Background image */}
+        <img
+          src={
+            (airport as Airport & { image_url?: string | null }).image_url ||
+            `https://source.unsplash.com/1600x600/?airport,terminal,${encodeURIComponent(
+              airport.city,
+            )}`
+          }
+          alt={`${airport.airport_name} hero`}
+          loading="eager"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src =
+              "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600&q=80";
+          }}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Readability overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/30" />
+
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-7 py-12 sm:py-16 min-h-[340px] grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
           <div className="lg:col-span-3">
-            <div className="font-display font-black text-5xl text-primary leading-none">
+            <div className="font-display font-black text-5xl sm:text-6xl text-white leading-none drop-shadow-md">
               {airport.iata_code}
             </div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-primary mt-3 leading-tight">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white mt-3 leading-tight drop-shadow">
               {airport.airport_name}
             </h1>
-            <p className="text-[15px] text-muted-foreground font-sans mt-1">
+            <p className="text-[15px] text-white/85 font-sans mt-1">
               {airport.city}, {airport.state}
             </p>
             {airport.operator && (
-              <p className="text-[12px] text-muted-foreground font-sans mt-2">
+              <p className="text-[12px] text-white/75 font-sans mt-2">
                 Operator: {airport.operator}
               </p>
             )}
