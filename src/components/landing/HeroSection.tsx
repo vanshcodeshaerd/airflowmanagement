@@ -2,31 +2,21 @@ import { motion } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectFade, Pagination } from "swiper/modules";
 import { SquareButton } from "./SquareButton";
+import boardingGate from "@/assets/hero-boarding-gate.jpg";
+import groundStaff from "@/assets/hero-ground-staff.jpg";
+import flightBoard from "@/assets/hero-flight-board.jpg";
+import controlTower from "@/assets/hero-control-tower.jpg";
+import traveler from "@/assets/hero-traveler.jpg";
 import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/pagination";
 
 const heroSlides = [
-  {
-    src: "https://images.unsplash.com/photo-1474302770737-173ee21bab63?w=1400&q=80",
-    alt: "Passengers waiting at an airport boarding gate",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1559686043-aef1bb6e80b3?w=1400&q=80",
-    alt: "Airport baggage handling and ground operations",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1503152394-c571994fd383?w=1400&q=80",
-    alt: "Airport terminal at night with departing flights",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1610642372651-fe69ad7035e7?w=1400&q=80",
-    alt: "Airline ground staff coordinating a flight turnaround",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1583416750470-965b2707b355?w=1400&q=80",
-    alt: "Traveler reviewing flight details on a mobile device",
-  },
+  { src: boardingGate, alt: "Passengers waiting at an airport boarding gate at golden hour" },
+  { src: groundStaff, alt: "Airline ground staff coordinating a flight turnaround on the tarmac" },
+  { src: flightBoard, alt: "Airport flight information display board with travelers" },
+  { src: controlTower, alt: "Air traffic control tower at twilight with departing aircraft" },
+  { src: traveler, alt: "Business traveler walking through a modern airport terminal" },
 ];
 
 export function HeroSection() {
