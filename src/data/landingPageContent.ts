@@ -17,7 +17,7 @@ export const features = [
   {
     title: "Boarding Pass Storage",
     description: "Keep digital boarding passes ready and accessible.",
-    image: "https://images.unsplash.com/photo-1583416750470-965b2707b355?w=600&q=80",
+    image: "/src/assets/boarding-pass.jpg",
   },
   {
     title: "Real-time Updates",
