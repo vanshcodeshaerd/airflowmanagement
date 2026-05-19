@@ -1,5 +1,6 @@
-import { Building, Info, LayoutGrid, MapPin, Users } from "lucide-react";
+import { Building, Info, LayoutGrid, Navigation, Users } from "lucide-react";
 import type { Airport } from "./types";
+import { getDirectionsUrl } from "./utils";
 
 interface Props {
   airport: Airport;
@@ -61,12 +62,19 @@ export function AirportCard({ airport, mode, onView, onEdit, onDelete, onSelect 
 
       <hr className="my-3 border-border" />
 
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-sans">
-        <MapPin className="w-3 h-3 shrink-0" />
-        <span className="select-text">
-          {airport.latitude.toFixed(4)}°N, {airport.longitude.toFixed(4)}°E
+      <a
+        href={getDirectionsUrl(airport)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        title="Open directions in Google Maps"
+        className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-accent-strong font-sans group/map"
+      >
+        <Navigation className="w-3 h-3 shrink-0 group-hover/map:text-accent-strong" />
+        <span className="underline-offset-2 group-hover/map:underline">
+          {airport.latitude.toFixed(4)}°N, {airport.longitude.toFixed(4)}°E · Directions
         </span>
-      </div>
+      </a>
       {airport.operator && (
         <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground font-sans mt-1">
           <Info className="w-3 h-3 shrink-0" />
