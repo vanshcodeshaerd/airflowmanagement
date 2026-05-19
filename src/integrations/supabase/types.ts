@@ -89,6 +89,7 @@ export type Database = {
           iata_code: string
           icao_code: string | null
           id: string
+          image_url: string | null
           is_active: boolean
           latitude: number
           longitude: number
@@ -114,6 +115,7 @@ export type Database = {
           iata_code: string
           icao_code?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           latitude: number
           longitude: number
@@ -139,6 +141,7 @@ export type Database = {
           iata_code?: string
           icao_code?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           latitude?: number
           longitude?: number
