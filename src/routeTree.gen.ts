@@ -14,6 +14,10 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardAirportsRouteImport } from './routes/_authenticated/dashboard.airports'
 import { Route as AuthenticatedAdminAirportsRouteImport } from './routes/_authenticated/admin.airports'
+import { Route as AuthenticatedAirportCodeFlightsRouteImport } from './routes/_authenticated/airport.$code.flights'
+import { Route as AuthenticatedAirportCodeFlightStatusRouteImport } from './routes/_authenticated/airport.$code.flight-status'
+import { Route as AuthenticatedAirportCodeDashboardRouteImport } from './routes/_authenticated/airport.$code.dashboard'
+import { Route as AuthenticatedAirportCodeBoardingPassRouteImport } from './routes/_authenticated/airport.$code.boarding-pass'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -41,18 +45,50 @@ const AuthenticatedAdminAirportsRoute =
     path: '/admin/airports',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAirportCodeFlightsRoute =
+  AuthenticatedAirportCodeFlightsRouteImport.update({
+    id: '/airport/$code/flights',
+    path: '/airport/$code/flights',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAirportCodeFlightStatusRoute =
+  AuthenticatedAirportCodeFlightStatusRouteImport.update({
+    id: '/airport/$code/flight-status',
+    path: '/airport/$code/flight-status',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAirportCodeDashboardRoute =
+  AuthenticatedAirportCodeDashboardRouteImport.update({
+    id: '/airport/$code/dashboard',
+    path: '/airport/$code/dashboard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAirportCodeBoardingPassRoute =
+  AuthenticatedAirportCodeBoardingPassRouteImport.update({
+    id: '/airport/$code/boarding-pass',
+    path: '/airport/$code/boarding-pass',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin/airports': typeof AuthenticatedAdminAirportsRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
+  '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
+  '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
+  '/airport/$code/flight-status': typeof AuthenticatedAirportCodeFlightStatusRoute
+  '/airport/$code/flights': typeof AuthenticatedAirportCodeFlightsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin/airports': typeof AuthenticatedAdminAirportsRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
+  '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
+  '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
+  '/airport/$code/flight-status': typeof AuthenticatedAirportCodeFlightStatusRoute
+  '/airport/$code/flights': typeof AuthenticatedAirportCodeFlightsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,12 +97,32 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin/airports': typeof AuthenticatedAdminAirportsRoute
   '/_authenticated/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
+  '/_authenticated/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
+  '/_authenticated/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
+  '/_authenticated/airport/$code/flight-status': typeof AuthenticatedAirportCodeFlightStatusRoute
+  '/_authenticated/airport/$code/flights': typeof AuthenticatedAirportCodeFlightsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/admin/airports' | '/dashboard/airports'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/admin/airports'
+    | '/dashboard/airports'
+    | '/airport/$code/boarding-pass'
+    | '/airport/$code/dashboard'
+    | '/airport/$code/flight-status'
+    | '/airport/$code/flights'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin/airports' | '/dashboard/airports'
+  to:
+    | '/'
+    | '/auth'
+    | '/admin/airports'
+    | '/dashboard/airports'
+    | '/airport/$code/boarding-pass'
+    | '/airport/$code/dashboard'
+    | '/airport/$code/flight-status'
+    | '/airport/$code/flights'
   id:
     | '__root__'
     | '/'
@@ -74,6 +130,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin/airports'
     | '/_authenticated/dashboard/airports'
+    | '/_authenticated/airport/$code/boarding-pass'
+    | '/_authenticated/airport/$code/dashboard'
+    | '/_authenticated/airport/$code/flight-status'
+    | '/_authenticated/airport/$code/flights'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,17 +179,56 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAirportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/airport/$code/flights': {
+      id: '/_authenticated/airport/$code/flights'
+      path: '/airport/$code/flights'
+      fullPath: '/airport/$code/flights'
+      preLoaderRoute: typeof AuthenticatedAirportCodeFlightsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/airport/$code/flight-status': {
+      id: '/_authenticated/airport/$code/flight-status'
+      path: '/airport/$code/flight-status'
+      fullPath: '/airport/$code/flight-status'
+      preLoaderRoute: typeof AuthenticatedAirportCodeFlightStatusRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/airport/$code/dashboard': {
+      id: '/_authenticated/airport/$code/dashboard'
+      path: '/airport/$code/dashboard'
+      fullPath: '/airport/$code/dashboard'
+      preLoaderRoute: typeof AuthenticatedAirportCodeDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/airport/$code/boarding-pass': {
+      id: '/_authenticated/airport/$code/boarding-pass'
+      path: '/airport/$code/boarding-pass'
+      fullPath: '/airport/$code/boarding-pass'
+      preLoaderRoute: typeof AuthenticatedAirportCodeBoardingPassRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminAirportsRoute: typeof AuthenticatedAdminAirportsRoute
   AuthenticatedDashboardAirportsRoute: typeof AuthenticatedDashboardAirportsRoute
+  AuthenticatedAirportCodeBoardingPassRoute: typeof AuthenticatedAirportCodeBoardingPassRoute
+  AuthenticatedAirportCodeDashboardRoute: typeof AuthenticatedAirportCodeDashboardRoute
+  AuthenticatedAirportCodeFlightStatusRoute: typeof AuthenticatedAirportCodeFlightStatusRoute
+  AuthenticatedAirportCodeFlightsRoute: typeof AuthenticatedAirportCodeFlightsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminAirportsRoute: AuthenticatedAdminAirportsRoute,
   AuthenticatedDashboardAirportsRoute: AuthenticatedDashboardAirportsRoute,
+  AuthenticatedAirportCodeBoardingPassRoute:
+    AuthenticatedAirportCodeBoardingPassRoute,
+  AuthenticatedAirportCodeDashboardRoute:
+    AuthenticatedAirportCodeDashboardRoute,
+  AuthenticatedAirportCodeFlightStatusRoute:
+    AuthenticatedAirportCodeFlightStatusRoute,
+  AuthenticatedAirportCodeFlightsRoute: AuthenticatedAirportCodeFlightsRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -144,3 +243,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
