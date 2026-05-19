@@ -1,10 +1,11 @@
 import boardingPassImg from "@/assets/boarding-pass.jpg";
+import passengerImg from "@/assets/passenger-management.jpg";
 
 export const features = [
   {
     title: "Passenger Management",
     description: "Store, edit and organize passenger details with ease.",
-    image: "https://images.unsplash.com/photo-1556388158-158ea5ccacbd?w=600&q=80",
+    image: passengerImg,
   },
   {
     title: "Flight Information",
