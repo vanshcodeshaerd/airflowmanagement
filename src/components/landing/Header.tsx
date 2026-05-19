@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Menu, Plane, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { SquareButton } from "./SquareButton";
+
 
 const links = [
   { label: "Home", href: "#home" },
@@ -26,8 +28,9 @@ export function Header() {
           ))}
         </nav>
         <div className="hidden md:block">
-          <SquareButton className="!px-7 !py-3 !text-xs">Get Started</SquareButton>
+          <Link to="/auth"><SquareButton className="!px-7 !py-3 !text-xs">Get Started</SquareButton></Link>
         </div>
+
         <button className="md:hidden text-primary" onClick={() => setOpen(!open)} aria-label="Toggle menu">
           {open ? <X /> : <Menu />}
         </button>
@@ -39,7 +42,7 @@ export function Header() {
               {l.label}
             </a>
           ))}
-          <SquareButton className="w-full">Get Started</SquareButton>
+          <Link to="/auth" onClick={() => setOpen(false)}><SquareButton className="w-full">Get Started</SquareButton></Link>
         </div>
       )}
     </header>
