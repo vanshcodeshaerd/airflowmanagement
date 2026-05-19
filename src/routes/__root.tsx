@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Airflow Management" },
+      { name: "description", content: "An airport and airline management platform for passengers to manage flights, bookings, and travel documents." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Airflow Management" },
+      { property: "og:description", content: "An airport and airline management platform for passengers to manage flights, bookings, and travel documents." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Airflow Management" },
+      { name: "twitter:description", content: "An airport and airline management platform for passengers to manage flights, bookings, and travel documents." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/85cd7f31-088f-4f1e-b4a9-7c8afa0f27d3/id-preview-0186a655--b930a068-367c-4ba9-8787-438585183df1.lovable.app-1779214506585.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/85cd7f31-088f-4f1e-b4a9-7c8afa0f27d3/id-preview-0186a655--b930a068-367c-4ba9-8787-438585183df1.lovable.app-1779214506585.png" },
     ],
     links: [
       {
