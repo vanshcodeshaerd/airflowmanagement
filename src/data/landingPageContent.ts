@@ -1,3 +1,5 @@
+import boardingPassImg from "@/assets/boarding-pass.jpg";
+
 export const features = [
   {
     title: "Passenger Management",
