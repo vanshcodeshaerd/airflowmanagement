@@ -418,11 +418,13 @@ function QuickLink({
   label,
   href,
   external,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   href?: string;
   external?: boolean;
+  onClick?: () => void;
 }) {
   const cls =
     "flex items-center gap-2 bg-white border border-border px-4 py-3 text-primary hover:border-accent hover:text-accent-strong transition rounded-none";
@@ -440,7 +442,7 @@ function QuickLink({
     );
   }
   return (
-    <button className={cls} type="button">
+    <button className={cls} type="button" onClick={onClick}>
       {icon}
       <span className="font-ui font-semibold text-[12px]">{label}</span>
     </button>
