@@ -21,12 +21,14 @@ import {
   Ticket,
   TrendingUp,
   User,
+  Receipt,
 } from "lucide-react";
 import { getAirportByCode } from "@/lib/airports.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { getDirectionsUrl } from "@/components/airports/utils";
 import type { Airport } from "@/components/airports/types";
 import { SupportModal } from "./SupportModal";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface Props {
   code: string;
