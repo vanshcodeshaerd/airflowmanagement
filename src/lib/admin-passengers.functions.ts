@@ -126,7 +126,7 @@ export const markNoShow = createServerFn({ method: "POST" })
 export const cancelBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({
-    bookingRowId: z.string().uuid(),
+    bookingRowId: z.string().min(1),
     reason: z.string().min(2).max(200),
   }).parse(input))
   .handler(async ({ data, context }) => {
