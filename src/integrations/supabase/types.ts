@@ -14,45 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      admin_actions: {
-        Row: {
-          action_type: string
-          admin_id: string | null
-          created_at: string
-          id: string
-          new_value: Json | null
-          notes: string | null
-          previous_value: Json | null
-          reason: string | null
-          target_entity: string
-          target_id: string
-        }
-        Insert: {
-          action_type: string
-          admin_id?: string | null
-          created_at?: string
-          id?: string
-          new_value?: Json | null
-          notes?: string | null
-          previous_value?: Json | null
-          reason?: string | null
-          target_entity: string
-          target_id: string
-        }
-        Update: {
-          action_type?: string
-          admin_id?: string | null
-          created_at?: string
-          id?: string
-          new_value?: Json | null
-          notes?: string | null
-          previous_value?: Json | null
-          reason?: string | null
-          target_entity?: string
-          target_id?: string
-        }
-        Relationships: []
-      }
       airlines: {
         Row: {
           code: string
@@ -240,33 +201,6 @@ export type Database = {
           total_terminals?: number | null
           updated_at?: string
           website_url?: string | null
-        }
-        Relationships: []
-      }
-      boarding_pass_updates: {
-        Row: {
-          boarding_pass_id: string | null
-          booking_id: string
-          created_at: string
-          description: string | null
-          id: string
-          update_type: string
-        }
-        Insert: {
-          boarding_pass_id?: string | null
-          booking_id: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          update_type: string
-        }
-        Update: {
-          boarding_pass_id?: string | null
-          booking_id?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          update_type?: string
         }
         Relationships: []
       }
@@ -618,45 +552,6 @@ export type Database = {
         }
         Relationships: []
       }
-      passenger_notifications: {
-        Row: {
-          booking_id: string | null
-          flight_id: string | null
-          id: string
-          is_read: boolean
-          message: string
-          notification_type: string
-          read_at: string | null
-          sent_at: string
-          title: string
-          user_id: string | null
-        }
-        Insert: {
-          booking_id?: string | null
-          flight_id?: string | null
-          id?: string
-          is_read?: boolean
-          message: string
-          notification_type: string
-          read_at?: string | null
-          sent_at?: string
-          title: string
-          user_id?: string | null
-        }
-        Update: {
-          booking_id?: string | null
-          flight_id?: string | null
-          id?: string
-          is_read?: boolean
-          message?: string
-          notification_type?: string
-          read_at?: string | null
-          sent_at?: string
-          title?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string
@@ -675,45 +570,6 @@ export type Database = {
           full_name?: string
           id?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      refund_records: {
-        Row: {
-          booking_id: string
-          id: string
-          initiated_at: string
-          initiated_by: string | null
-          processed_at: string | null
-          refund_amount: number
-          refund_reason: string | null
-          refund_type: string
-          status: string
-          user_id: string | null
-        }
-        Insert: {
-          booking_id: string
-          id?: string
-          initiated_at?: string
-          initiated_by?: string | null
-          processed_at?: string | null
-          refund_amount: number
-          refund_reason?: string | null
-          refund_type?: string
-          status?: string
-          user_id?: string | null
-        }
-        Update: {
-          booking_id?: string
-          id?: string
-          initiated_at?: string
-          initiated_by?: string | null
-          processed_at?: string | null
-          refund_amount?: number
-          refund_reason?: string | null
-          refund_type?: string
-          status?: string
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -743,21 +599,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_cancel_flight: {
-        Args: { p_flight_id: string; p_reason: string }
-        Returns: undefined
-      }
-      admin_change_gate: {
-        Args: { p_flight_id: string; p_new_gate_id: string }
-        Returns: {
-          gate_number: string
-          terminal: string
-        }[]
-      }
-      admin_delay_flight: {
-        Args: { p_delay_minutes: number; p_flight_id: string; p_reason: string }
-        Returns: undefined
-      }
       assign_gate_for_flight: {
         Args: { p_flight_id: string }
         Returns: {
