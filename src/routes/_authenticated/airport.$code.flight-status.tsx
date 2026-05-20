@@ -295,6 +295,8 @@ function FlightStatusCard({ flight, now }: { flight: FlightStatusRow; now: Date 
           />
         </div>
 
+        <AircraftAndStops flightNumber={flight.flight_number} />
+
         {/* Timeline */}
         {live !== "Departed" && live !== "Cancelled" && (
           <div className="pt-2">
