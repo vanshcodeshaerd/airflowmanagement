@@ -28,7 +28,6 @@ export function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
 
   const onSubmit = async (values: LoginValues) => {
     setSubmitError(null);
-    const isDemoAdmin = isAdminCredential(values.email, values.password);
     const { error } = await supabase.auth.signInWithPassword({
       email: values.email,
       password: values.password,
@@ -37,8 +36,8 @@ export function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
       setSubmitError("Invalid email or password. Please try again.");
       return;
     }
-    localStorage.setItem("userRole", isDemoAdmin ? "ADMIN" : "USER");
-    const dest = isDemoAdmin ? "/admin/airports" : "/dashboard/airports";
+    localStorage.setItem("userRole", "USER");
+    const dest = "/dashboard/airports";
     navigate({ to: dest as never }).catch(() => {
       window.location.href = dest;
     });
