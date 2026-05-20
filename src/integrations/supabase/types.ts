@@ -317,13 +317,106 @@ export type Database = {
           },
         ]
       }
+      flight_gate_assignments: {
+        Row: {
+          airport_code: string
+          assigned_at: string
+          flight_id: string
+          gate_blocked_until: string
+          gate_id: string
+          gate_number: string
+          id: string
+          is_active: boolean
+          terminal: string
+        }
+        Insert: {
+          airport_code: string
+          assigned_at?: string
+          flight_id: string
+          gate_blocked_until: string
+          gate_id: string
+          gate_number: string
+          id?: string
+          is_active?: boolean
+          terminal: string
+        }
+        Update: {
+          airport_code?: string
+          assigned_at?: string
+          flight_id?: string
+          gate_blocked_until?: string
+          gate_id?: string
+          gate_number?: string
+          id?: string
+          is_active?: boolean
+          terminal?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_gate_assignments_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_gate_assignments_gate_id_fkey"
+            columns: ["gate_id"]
+            isOneToOne: false
+            referencedRelation: "gates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flight_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          current_status: string
+          flight_id: string
+          id: string
+          previous_status: string | null
+          reason: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string
+          current_status: string
+          flight_id: string
+          id?: string
+          previous_status?: string | null
+          reason?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          current_status?: string
+          flight_id?: string
+          id?: string
+          previous_status?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_status_history_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flights: {
         Row: {
+          actual_arrival_time: string | null
+          actual_departure_time: string | null
           aircraft_type: string
           airline_code: string
           arrival_datetime: string
           business_price: number
           created_at: string
+          delay_minutes: number
+          delay_reason: string | null
           departure_datetime: string
           destination_code: string
           duration_minutes: number
@@ -337,13 +430,18 @@ export type Database = {
           number_of_stops: number
           premium_economy_price: number
           source_code: string
+          terminal: string | null
         }
         Insert: {
+          actual_arrival_time?: string | null
+          actual_departure_time?: string | null
           aircraft_type: string
           airline_code: string
           arrival_datetime: string
           business_price: number
           created_at?: string
+          delay_minutes?: number
+          delay_reason?: string | null
           departure_datetime: string
           destination_code: string
           duration_minutes: number
@@ -357,13 +455,18 @@ export type Database = {
           number_of_stops?: number
           premium_economy_price: number
           source_code: string
+          terminal?: string | null
         }
         Update: {
+          actual_arrival_time?: string | null
+          actual_departure_time?: string | null
           aircraft_type?: string
           airline_code?: string
           arrival_datetime?: string
           business_price?: number
           created_at?: string
+          delay_minutes?: number
+          delay_reason?: string | null
           departure_datetime?: string
           destination_code?: string
           duration_minutes?: number
@@ -377,6 +480,7 @@ export type Database = {
           number_of_stops?: number
           premium_economy_price?: number
           source_code?: string
+          terminal?: string | null
         }
         Relationships: [
           {
@@ -387,6 +491,33 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
+      }
+      gates: {
+        Row: {
+          airport_code: string
+          created_at: string
+          gate_number: string
+          id: string
+          is_active: boolean
+          terminal: string
+        }
+        Insert: {
+          airport_code: string
+          created_at?: string
+          gate_number: string
+          id?: string
+          is_active?: boolean
+          terminal: string
+        }
+        Update: {
+          airport_code?: string
+          created_at?: string
+          gate_number?: string
+          id?: string
+          is_active?: boolean
+          terminal?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -435,6 +566,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_gate_for_flight: {
+        Args: { p_flight_id: string }
+        Returns: {
+          gate_number: string
+          terminal: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
