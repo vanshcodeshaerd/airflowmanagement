@@ -20,5 +20,5 @@ export const Route = createFileRoute("/_authenticated/dashboard/airports")({
       { property: "og:description", content: DESC },
     ],
   }),
-  component: () => <AirportDirectoryPage mode="user" />,
+  component: () => <AirportDirectoryPage />,
 });
