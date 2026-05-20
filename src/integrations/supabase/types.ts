@@ -1345,6 +1345,25 @@ export type Database = {
           terminal: string
         }[]
       }
+      confirm_booking_with_payment: {
+        Args: {
+          p_booking_id: string
+          p_cabin_class: string
+          p_flight_id: string
+          p_passenger_age: number
+          p_passenger_email: string
+          p_passenger_name: string
+          p_passenger_passport: string
+          p_passenger_phone: string
+          p_payment_id: string
+          p_seat_number: string
+          p_total_amount: number
+          p_txn_ref: string
+          p_user_id: string
+          p_user_upi: string
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

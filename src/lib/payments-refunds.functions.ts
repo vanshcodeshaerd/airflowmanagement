@@ -71,7 +71,7 @@ export const completeUpiPayment = createServerFn({ method: "POST" })
     if (!booking) throw new Error("Booking not found");
 
     const txn = genTxnId(booking.booking_id);
-    const paymentId = `PAY-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
+    const paymentId = `PAY-${Date.now()}-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8).toUpperCase()}`;
 
     const { error: passengerError } = await supabaseAdmin.from("passenger").upsert(
       {
@@ -254,8 +254,7 @@ export const cancelOwnDelayedBooking = createServerFn({ method: "POST" })
     await supabase
       .from("bookings")
       .update({
-        booking_status: "Cancelled",
-        cancelled_at: new Date().toISOString(),
+        booking_status: "Cancellation Requested",
         cancellation_reason: data.reason ?? "Cancelled due to delay",
         refund_ref_id: refundReqId,
       })
@@ -266,8 +265,8 @@ export const cancelOwnDelayedBooking = createServerFn({ method: "POST" })
       booking_id: booking.booking_id,
       flight_id: booking.flight_id,
       notification_type: "REFUND_INITIATED",
-      title: "Booking cancelled — refund initiated",
-      message: `Refund ${refundReqId} of ₹${booking.total_amount} has been initiated and will be credited shortly.`,
+      title: "Cancellation request submitted",
+      message: `Refund request ${refundReqId} for ₹${booking.total_amount} is awaiting admin approval. You'll be notified once it's processed.`,
     });
 
     return { refund_request_id: refundReqId };
@@ -424,6 +423,16 @@ export const adminApproveRefund = createServerFn({ method: "POST" })
         .eq("transaction_reference", refund.request_txn_id);
     }
 
+    // Finalize booking cancellation if this came from a self-cancel / refund request
+    await context.supabase
+      .from("bookings")
+      .update({
+        booking_status: "Cancelled",
+        cancelled_at: new Date().toISOString(),
+      })
+      .eq("booking_id", refund.booking_id)
+      .in("booking_status", ["Cancellation Requested", "Refund Requested"]);
+
     if (data.notify) {
       await context.supabase.from("passenger_notifications").insert({
         user_id: refund.user_id,
@@ -478,6 +487,13 @@ export const adminRejectRefund = createServerFn({ method: "POST" })
         admin_notes: data.notes ?? null,
       })
       .eq("id", data.refund_id);
+
+    // Revert booking status back to Confirmed if it was awaiting this decision
+    await context.supabase
+      .from("bookings")
+      .update({ booking_status: "Confirmed", refund_ref_id: null })
+      .eq("booking_id", refund.booking_id)
+      .in("booking_status", ["Cancellation Requested", "Refund Requested"]);
 
     if (data.notify) {
       await context.supabase.from("passenger_notifications").insert({
