@@ -65,7 +65,7 @@ export const delayFlight = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ flightId: z.string().uuid(), delayMinutes: z.number().int().min(1).max(999), reason: z.string().min(1).max(500) }).parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { error } = await supabaseAdmin.rpc("admin_delay_flight", {
+    const { error } = await context.supabase.rpc("admin_delay_flight", {
       p_flight_id: data.flightId,
       p_delay_minutes: data.delayMinutes,
       p_reason: data.reason,
@@ -79,7 +79,7 @@ export const cancelFlight = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ flightId: z.string().uuid(), reason: z.string().min(1).max(500) }).parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { error } = await supabaseAdmin.rpc("admin_cancel_flight", {
+    const { error } = await context.supabase.rpc("admin_cancel_flight", {
       p_flight_id: data.flightId,
       p_reason: data.reason,
     });
@@ -92,7 +92,7 @@ export const changeFlightGate = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ flightId: z.string().uuid(), terminal: z.string().min(1).max(20), gate: z.string().min(1).max(20) }).parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { error } = await supabaseAdmin.rpc("admin_change_gate", {
+    const { error } = await context.supabase.rpc("admin_change_gate", {
       p_flight_id: data.flightId,
       p_new_terminal: data.terminal,
       p_new_gate: data.gate,
