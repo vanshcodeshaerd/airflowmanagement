@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -7,9 +7,43 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
+
+function RealtimeSync() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const tables = [
+      "flights",
+      "boarding_passes",
+      "bookings",
+      "passenger_notifications",
+      "flight_gate_assignments",
+      "flight_status_history",
+    ];
+    const channel = supabase.channel("admin-user-sync");
+    for (const table of tables) {
+      channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table },
+        () => {
+          queryClient.invalidateQueries();
+          router.invalidate();
+        },
+      );
+    }
+    channel.subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, router]);
+  return null;
+}
 
 function NotFoundComponent() {
   return (
