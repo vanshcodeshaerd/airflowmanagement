@@ -1,5 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { z } from "zod";
+
+async function assertAdmin(ctx: { supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }; userId: string }) {
+  const { data, error } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" });
+  if (error) throw new Error((error as { message: string }).message);
+  if (!data) throw new Error("Forbidden: admin role required");
+}
 
 // Read-only access to the original Oracle-shape tables (LOCATION, PASSENGER,
 // PAYMENT, REFUND_INFO, BAGGAGE, CHECK_IN, FLIGHT_STOPS, AIRCRAFT_MODEL,
