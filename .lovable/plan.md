@@ -1,82 +1,104 @@
-# Plan: Surface Legacy Data on UI + Admin Sync
+## UPI Payment + Refund System
 
-The 8 new legacy tables (location, terminal, aircraft_model, passenger, payment, baggage, check_in, flight_stops) currently only exist in the DB. This plan exposes them in the UI and wires them into the existing realtime sync so admin changes appear instantly on the user side.
+Adds a mock UPI payment flow, a user refund portal, auto-refund on flight cancellation, an admin refund management page, and an in-app notification bell. No external APIs — everything is database-backed via Lovable Cloud.
 
-## What gets added to the UI
+### Scope guardrails
+- Do **not** change existing booking, flight, boarding-pass, or admin pages beyond additive insertions.
+- All new buttons stay SQUARE (`rounded-none`) and reuse existing tokens (`navy`, `accent`, `accent-strong`, etc.).
+- Two new routes only: `/refund` (user) and `/admin/refunds` (admin). Sidebar gets one new admin entry.
 
-### User-side (passenger app)
+---
 
-1. **My Bookings → expanded booking detail card**
-   - Payment block: amount, method, status, transaction ref (from `payment`)
-   - Baggage block: tag ID, weight, type, status (from `baggage`)
-   - Check-in block: status, method, seat confirmed, boarding-pass issued (from `check_in`)
-   - Flight stops: "Direct" or list of intermediate stops (from `flight_stops`)
+### 1. Database migration (single migration)
 
-2. **Flight Status / Flight Detail pages**
-   - Aircraft info chip: model, airline, seating capacity (from `aircraft_model` via `flights.model_id`)
-   - Stops indicator: "Non-stop" vs "1 stop via DEL" (from `flight_stops`)
+**Extend existing tables (additive only):**
+- `payment`: add `transaction_reference` (unique), `user_upi_id`, `gateway_upi_id` default `'airflow.payments@upi'`, `transaction_status` default `'Success'`, `booking_reference`, `remarks`. (Already has `payment_timestamp`, no need to re-add.)
+- `refund_records` (existing equivalent of REFUND_INFO): add `refund_type` (`Manual|Auto|Bulk`), `request_email`, `request_booking_id`, `request_txn_id`, `requested_by` (`USER|ADMIN|SYSTEM`), `approved_by`, `approved_at`, `rejected_at`, `rejection_reason`, `refund_to_upi`, `flight_number`, `is_auto_refund` bool, `is_active` bool default true, `admin_notes`, `refund_request_id` (human-readable, e.g. `REF-YYYYMMDD-NNN`).
+- `bookings`: ensure cancel columns exist (already has `cancelled_at`, `cancellation_reason`). Add `refund_ref_id` text.
+- `passenger_notifications`: extend `notification_type` allowed values to include `REFUND_INITIATED`, `REFUND_APPROVED`, `REFUND_REJECTED` (no constraint change needed — column is free text).
 
-3. **Airport detail pages**
-   - Terminals list: terminal number, name, capacity (from `terminal` filtered by `location_id`)
+**Update existing `admin_cancel_flight` function** so auto-refunds also:
+- set `refund_records.refund_type = 'Auto'`, `requested_by = 'SYSTEM'`, `is_auto_refund = true`, `flight_number`, `refund_to_upi` (from `payment.user_upi_id`), `request_email`, `request_booking_id`, `request_txn_id`.
+- update `payment.transaction_status = 'Refunded'` and `payment.payment_status = 'Refund Pending'`.
+- notification message includes UPI + refund id.
 
-### Admin portal (new management screens)
+**Indexes:** unique index on `payment.transaction_reference`, btree on `refund_records(refund_status, is_active)`.
 
-Reachable from existing admin sidebar:
+**RLS:**
+- `refund_records` already has admin-all + user-read-own. Add `INSERT` policy for authenticated users where `auth.uid() = user_id` (so the refund form can write).
+- Admins keep `ALL`.
 
-1. **Passengers** — list + search, edit contact/passport, deactivate
-2. **Payments** — list, filter by status, mark refunded
-3. **Baggage** — list by flight, update status (Checked-in → Loaded → Arrived → Claimed)
-4. **Check-ins** — list by flight, toggle status, reissue boarding pass
-5. **Flight Stops** — add/remove stops per flight number
-6. **Aircraft Models** — CRUD (model, airline, capacity, class pricing)
-7. **Terminals** — CRUD per location
+---
 
-All admin writes go through `createServerFn` + `requireSupabaseAuth` with admin role check (matching existing `admin-flights.functions.ts` pattern).
+### 2. Server functions (`src/lib/payments-refunds.functions.ts`)
+- `completeUpiPayment({ booking_id, user_upi_id, amount })` — generates `TXN-…`, inserts/updates `payment`, marks booking `Confirmed`, returns `{ transaction_reference }`. Auth required.
+- `submitRefundRequest({ email, booking_id, transaction_id, reason?, refund_to_upi })` — validates all three IDs belong together, ensures flight is cancelled or delayed, ensures no duplicate non-rejected refund, inserts `refund_records` (status `Pending`, type `Manual`), updates booking status `Refund Requested`, inserts notification, returns `{ refund_request_id }`.
+- `cancelOwnBookingForRefund({ booking_id, reason })` — passenger-triggered cancel for delayed flights → same cascade scoped to one booking.
+- `listMyNotifications()` / `markNotificationRead({ id })` / `markAllNotificationsRead()`.
+- `listMyRefunds()` for the user dashboard.
 
-## Realtime sync
+Admin functions (assertAdmin):
+- `adminListRefunds({ status, search?, type? })`
+- `adminApproveRefund({ refund_id, amount, admin_notes?, notify })`
+- `adminRejectRefund({ refund_id, reason, notes, notify })`
+- `adminMarkRefundCredited({ refund_id })`
+- `adminBulkRefundFlight({ flight_id, ticket_numbers[], reason, notes })`
+- `adminEditRefund({ refund_id, amount?, refund_to_upi?, admin_notes?, status? })`
+- `adminSoftDeleteRefund({ refund_id, reason })`
 
-Extend the existing `RealtimeSync` subscription in `src/routes/__root.tsx` to also listen for changes on: `passenger`, `payment`, `baggage`, `check_in`, `flight_stops`, `aircraft_model`, `terminal`, `location`.
+---
 
-Migration enables realtime publication + `REPLICA IDENTITY FULL` on these 8 tables. On any change, `queryClient.invalidateQueries()` + `router.invalidate()` fires — so an admin updating baggage status instantly updates the passenger's booking screen.
+### 3. UI surfaces
 
-## Technical structure
+**Payment UI (additive only):**
+- New `UpiPaymentBox` component, shown inside the existing payment step when method = UPI. Three boxes (Pay To, Your UPI, Amount) + green SQUARE pay button + 1.5s simulated processing.
+- After success, a `PaymentSuccessTxnCard` rendered alongside existing success info: prominent Transaction ID + Copy button + warning to save it.
 
-```
-src/lib/
-  legacy.functions.ts          (extend: add admin write fns + per-booking read fns)
-  admin-passengers.functions.ts
-  admin-payments.functions.ts
-  admin-baggage.functions.ts
-  admin-checkin.functions.ts
-  admin-stops.functions.ts
-  admin-aircraft.functions.ts
-  admin-terminals.functions.ts
+**User refund portal (`/refund`):**
+- New route file `src/routes/_authenticated/refund.tsx`.
+- Form (zod-validated, real-time errors): Email, Booking ID, Transaction ID, Reason dropdown, Refund UPI. Submit → success screen with Refund Request ID, amount, UPI, status badge, "what happens next" box, buttons to My Bookings / Home.
 
-src/routes/
-  admin.passengers.tsx
-  admin.payments.tsx
-  admin.baggage.tsx
-  admin.checkin.tsx
-  admin.stops.tsx
-  admin.aircraft.tsx
-  admin.terminals.tsx
+**Notification bell:**
+- New `NotificationBell` component mounted in the user-facing header (airport-dashboard header). 30-second polling via `useQuery({ refetchInterval: 30000 })` + realtime invalidation already wired in root. Dropdown lists notifications with icons by type; "Mark all read" + per-item click marks read.
 
-src/components/booking/
-  BookingPaymentCard.tsx
-  BookingBaggageCard.tsx
-  BookingCheckinCard.tsx
-  FlightStopsBadge.tsx
-  AircraftInfoChip.tsx
-```
+**Booking history additions:**
+- On user dashboard / boarding-pass page, each cancelled/delayed booking gets a "Request Refund" or "Cancel & Refund" SQUARE button + refund status badge (Pending / Approved / Rejected / Auto).
 
-Linking key between booking and legacy tables: `bookings.booking_id` ↔ `payment.booking_id`; `bookings.passenger_passport_id` (or ticket) ↔ `passenger.ticket_number` ↔ `baggage.ticket_number` ↔ `check_in.ticket_number`. Where the join is loose (legacy seeded data uses ticket numbers like T501–T506), I'll backfill `ticket_number` on existing bookings via a one-time SQL update so the join works for real bookings too.
+**Admin refund management (`/admin/refunds`):**
+- New route file `src/routes/admin.refunds.tsx`. Tabs: Pending / Approved / Rejected / Auto. KPI cards on top. Table with Approve/Reject/Details actions. Approve modal (editable amount, notes, notify checkbox). Reject modal (reason dropdown + notes). Bulk Refund modal launched from flight detail's cancel area and from a top-bar button (lists confirmed passengers for a chosen flight with checkboxes).
+- Sidebar (`AdminSidebar.tsx`): add "Refunds" entry between Operations and the disabled stubs.
 
-## Out of scope
+---
 
-- Renaming current tables to uppercase Oracle names
-- Building a payments gateway flow (admin-only mark-as-paid for now)
-- Importing/exporting Oracle DMP files
+### 4. Technical notes
+- Transaction ID generated server-side (`generateTransactionId`) — clients never invent it.
+- Refund Request ID: `REF-YYYYMMDD-NNN` where NNN is a per-day counter (computed in the server fn via `count(*) where date(initiated_at)=today`).
+- Realtime: `refund_records` is added to the existing realtime publication if not already there; the root `RealtimeSync` already lists it ✓.
+- Validation: all server fns use zod. Email lowercased+trimmed; UPI must contain `@`.
+- Soft delete: never hard-delete; `is_active=false` plus reason logged to `admin_actions`.
+- No new packages required.
 
-## Confirm before I build
+---
 
-Approve and I'll ship in this order: (1) migration for realtime + ticket backfill, (2) read components on user side, (3) admin CRUD screens, (4) extend RealtimeSync.
+### 5. Files
+
+**New**
+- `src/lib/payments-refunds.functions.ts`
+- `src/components/payments/UpiPaymentBox.tsx`
+- `src/components/payments/PaymentSuccessTxnCard.tsx`
+- `src/components/notifications/NotificationBell.tsx`
+- `src/components/refunds/RefundStatusBadge.tsx`
+- `src/routes/_authenticated/refund.tsx`
+- `src/routes/admin.refunds.tsx`
+- `src/components/admin/refunds/ApproveRefundModal.tsx`
+- `src/components/admin/refunds/RejectRefundModal.tsx`
+- `src/components/admin/refunds/BulkRefundModal.tsx`
+
+**Edited (minimal)**
+- `src/components/admin/AdminSidebar.tsx` — add Refunds link.
+- Existing payment step component — render `UpiPaymentBox` when method = UPI; render `PaymentSuccessTxnCard` on success. (Will locate during implementation.)
+- Existing user header — mount `NotificationBell`.
+- Existing booking/boarding-pass cards — add refund action button + status badge.
+- Migration file under `supabase/migrations/`.
+
+Once approved, I'll start with the migration and walk through the rest.
