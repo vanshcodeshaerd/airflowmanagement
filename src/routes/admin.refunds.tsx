@@ -169,11 +169,17 @@ function AdminRefundsPage() {
   );
 }
 
-function Kpi({ label, value, color }: { label: string; value: string | number; color: string }) {
+function Kpi({ label, value, tone }: { label: string; value: string | number; tone: "ok" | "warn" | "bad" | "info" }) {
+  const map = {
+    ok: "text-emerald-300",
+    warn: "text-amber-300",
+    bad: "text-red-300",
+    info: "text-sky-300",
+  };
   return (
-    <div className="bg-white border-2 border-muted p-4">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`mt-1 inline-block px-2 py-0.5 font-display font-extrabold text-xl ${color}`}>{value}</div>
+    <div className="bg-[#001429] border border-white/10 p-4 rounded-none">
+      <div className="text-[10px] uppercase tracking-wider text-white/50">{label}</div>
+      <div className={`mt-1 font-display font-extrabold text-2xl ${map[tone]}`}>{value}</div>
     </div>
   );
 }
