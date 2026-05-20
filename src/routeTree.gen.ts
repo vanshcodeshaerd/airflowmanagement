@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminOperationsRouteImport } from './routes/admin.operations'
 import { Route as AdminAirportsRouteImport } from './routes/admin.airports'
 import { Route as AdminAirportsIndexRouteImport } from './routes/admin.airports.index'
 import { Route as AdminAirportsCodeRouteImport } from './routes/admin.airports.$code'
@@ -45,6 +46,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOperationsRoute = AdminOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAirportsRoute = AdminAirportsRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/admin/airports': typeof AdminAirportsRouteWithChildren
+  '/admin/operations': typeof AdminOperationsRoute
   '/admin/': typeof AdminIndexRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
   '/admin/airports/$code': typeof AdminAirportsCodeRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin/operations': typeof AdminOperationsRoute
   '/admin': typeof AdminIndexRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
   '/admin/airports/$code': typeof AdminAirportsCodeRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/admin/airports': typeof AdminAirportsRouteWithChildren
+  '/admin/operations': typeof AdminOperationsRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
   '/admin/airports/$code': typeof AdminAirportsCodeRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/admin/airports'
+    | '/admin/operations'
     | '/admin/'
     | '/dashboard/airports'
     | '/admin/airports/$code'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/admin/operations'
     | '/admin'
     | '/dashboard/airports'
     | '/admin/airports/$code'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/admin/airports'
+    | '/admin/operations'
     | '/admin/'
     | '/_authenticated/dashboard/airports'
     | '/admin/airports/$code'
@@ -221,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/operations': {
+      id: '/admin/operations'
+      path: '/operations'
+      fullPath: '/admin/operations'
+      preLoaderRoute: typeof AdminOperationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/airports': {
@@ -321,11 +340,13 @@ const AdminAirportsRouteWithChildren = AdminAirportsRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAirportsRoute: typeof AdminAirportsRouteWithChildren
+  AdminOperationsRoute: typeof AdminOperationsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAirportsRoute: AdminAirportsRouteWithChildren,
+  AdminOperationsRoute: AdminOperationsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -340,3 +361,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
