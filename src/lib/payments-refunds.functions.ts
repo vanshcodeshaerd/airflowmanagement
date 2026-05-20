@@ -71,7 +71,7 @@ export const completeUpiPayment = createServerFn({ method: "POST" })
     if (!booking) throw new Error("Booking not found");
 
     const txn = genTxnId(booking.booking_id);
-    const paymentId = `PAY-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
+    const paymentId = `PAY-${Date.now()}-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8).toUpperCase()}`;
 
     const { error: passengerError } = await supabaseAdmin.from("passenger").upsert(
       {
