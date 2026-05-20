@@ -24,6 +24,8 @@ function AdminLayout() {
   let title = "Dashboard";
   if (path === "/admin/airports") title = "Airport Management";
   else if (path.startsWith("/admin/airports/")) title = "Flight Operations";
+  else if (path === "/admin/refunds") title = "Refund Management";
+  else if (path === "/admin/operations") title = "Operations";
 
   return (
     <div className="min-h-screen flex bg-[#0d1b2a] text-white">
