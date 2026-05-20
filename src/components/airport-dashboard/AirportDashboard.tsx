@@ -105,6 +105,13 @@ export function AirportDashboard({ code }: Props) {
             AirFlow
           </Link>
           <div className="flex items-center gap-3">
+            <NotificationBell />
+            <Link
+              to="/refund"
+              className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-ui font-semibold text-accent hover:underline"
+            >
+              <Receipt className="w-4 h-4" /> Refund
+            </Link>
             <button
               aria-label="Profile"
               className="w-9 h-9 grid place-items-center bg-sky-soft text-accent-strong rounded-none"
