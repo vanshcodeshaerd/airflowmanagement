@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { UpiPaymentBox } from "@/components/payments/UpiPaymentBox";
 
 export const Route = createFileRoute("/_authenticated/airport/$code/flights")({
   head: ({ params }) => ({
