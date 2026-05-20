@@ -13,7 +13,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardAirportsRouteImport } from './routes/_authenticated/dashboard.airports'
-import { Route as AuthenticatedAdminAirportsRouteImport } from './routes/_authenticated/admin.airports'
 import { Route as AuthenticatedAirportCodeFlightsRouteImport } from './routes/_authenticated/airport.$code.flights'
 import { Route as AuthenticatedAirportCodeFlightStatusRouteImport } from './routes/_authenticated/airport.$code.flight-status'
 import { Route as AuthenticatedAirportCodeDashboardRouteImport } from './routes/_authenticated/airport.$code.dashboard'
@@ -37,12 +36,6 @@ const AuthenticatedDashboardAirportsRoute =
   AuthenticatedDashboardAirportsRouteImport.update({
     id: '/dashboard/airports',
     path: '/dashboard/airports',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedAdminAirportsRoute =
-  AuthenticatedAdminAirportsRouteImport.update({
-    id: '/admin/airports',
-    path: '/admin/airports',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAirportCodeFlightsRoute =
@@ -73,7 +66,6 @@ const AuthenticatedAirportCodeBoardingPassRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/admin/airports': typeof AuthenticatedAdminAirportsRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
   '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
   '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
@@ -83,7 +75,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/admin/airports': typeof AuthenticatedAdminAirportsRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
   '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
   '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
@@ -95,7 +86,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
-  '/_authenticated/admin/airports': typeof AuthenticatedAdminAirportsRoute
   '/_authenticated/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
   '/_authenticated/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
   '/_authenticated/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
@@ -107,7 +97,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/admin/airports'
     | '/dashboard/airports'
     | '/airport/$code/boarding-pass'
     | '/airport/$code/dashboard'
@@ -117,7 +106,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/admin/airports'
     | '/dashboard/airports'
     | '/airport/$code/boarding-pass'
     | '/airport/$code/dashboard'
@@ -128,7 +116,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/_authenticated/admin/airports'
     | '/_authenticated/dashboard/airports'
     | '/_authenticated/airport/$code/boarding-pass'
     | '/_authenticated/airport/$code/dashboard'
@@ -172,13 +159,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardAirportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/admin/airports': {
-      id: '/_authenticated/admin/airports'
-      path: '/admin/airports'
-      fullPath: '/admin/airports'
-      preLoaderRoute: typeof AuthenticatedAdminAirportsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/airport/$code/flights': {
       id: '/_authenticated/airport/$code/flights'
       path: '/airport/$code/flights'
@@ -211,7 +191,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAdminAirportsRoute: typeof AuthenticatedAdminAirportsRoute
   AuthenticatedDashboardAirportsRoute: typeof AuthenticatedDashboardAirportsRoute
   AuthenticatedAirportCodeBoardingPassRoute: typeof AuthenticatedAirportCodeBoardingPassRoute
   AuthenticatedAirportCodeDashboardRoute: typeof AuthenticatedAirportCodeDashboardRoute
@@ -220,7 +199,6 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAdminAirportsRoute: AuthenticatedAdminAirportsRoute,
   AuthenticatedDashboardAirportsRoute: AuthenticatedDashboardAirportsRoute,
   AuthenticatedAirportCodeBoardingPassRoute:
     AuthenticatedAirportCodeBoardingPassRoute,
