@@ -36,8 +36,11 @@ export function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
       setSubmitError("Invalid email or password. Please try again.");
       return;
     }
-    localStorage.setItem("userRole", "USER");
-    const dest = "/dashboard/airports";
+    const isAdmin = isAdminCredential(values.email, values.password);
+    localStorage.setItem("userRole", isAdmin ? "ADMIN" : "USER");
+    if (isAdmin) localStorage.setItem("adminVerified", "true");
+    else localStorage.removeItem("adminVerified");
+    const dest = isAdmin ? "/admin" : "/dashboard/airports";
     navigate({ to: dest as never }).catch(() => {
       window.location.href = dest;
     });
