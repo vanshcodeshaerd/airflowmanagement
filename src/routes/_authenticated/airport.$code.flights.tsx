@@ -379,7 +379,8 @@ function BookingDialog({
           <DialogTitle>
             {step === 1 && "Passenger details"}
             {step === 2 && "Review booking"}
-            {step === 3 && "Confirming…"}
+            {step === 3 && "Pay with UPI"}
+            {step === 4 && "Creating booking…"}
           </DialogTitle>
         </DialogHeader>
 
