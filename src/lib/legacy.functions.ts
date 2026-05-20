@@ -175,7 +175,7 @@ export const getFlightAircraftAndStops = createServerFn({ method: "GET" })
       supabase.from("flights").select("model_id, airline_code, aircraft_type").eq("flight_number", data.flight_number).maybeSingle(),
       supabase.from("flight_stops" as never).select("*").eq("flight_number", data.flight_number).order("stop_number"),
     ]);
-    let aircraft: Record<string, unknown> | null = null;
+    let aircraft: any = null;
     const modelId = (flightRes.data as { model_id?: string } | null)?.model_id;
     if (modelId) {
       const { data: m } = await supabase.from("aircraft_model" as never).select("*").eq("model_id", modelId).maybeSingle();
