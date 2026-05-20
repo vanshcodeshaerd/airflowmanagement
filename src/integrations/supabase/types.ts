@@ -53,6 +53,48 @@ export type Database = {
         }
         Relationships: []
       }
+      aircraft_model: {
+        Row: {
+          aircraft_type: string | null
+          airline_name: string
+          business_price: number | null
+          business_seats: number | null
+          economy_price: number | null
+          economy_seats: number | null
+          first_class_price: number | null
+          first_class_seats: number | null
+          iata_airline_code: string | null
+          model_id: string
+          seating_capacity: number
+        }
+        Insert: {
+          aircraft_type?: string | null
+          airline_name: string
+          business_price?: number | null
+          business_seats?: number | null
+          economy_price?: number | null
+          economy_seats?: number | null
+          first_class_price?: number | null
+          first_class_seats?: number | null
+          iata_airline_code?: string | null
+          model_id: string
+          seating_capacity: number
+        }
+        Update: {
+          aircraft_type?: string | null
+          airline_name?: string
+          business_price?: number | null
+          business_seats?: number | null
+          economy_price?: number | null
+          economy_seats?: number | null
+          first_class_price?: number | null
+          first_class_seats?: number | null
+          iata_airline_code?: string | null
+          model_id?: string
+          seating_capacity?: number
+        }
+        Relationships: []
+      }
       airlines: {
         Row: {
           code: string
@@ -179,6 +221,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           latitude: number
+          location_id: string | null
           longitude: number
           operator: string | null
           state: string
@@ -205,6 +248,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           latitude: number
+          location_id?: string | null
           longitude: number
           operator?: string | null
           state: string
@@ -231,6 +275,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           latitude?: number
+          location_id?: string | null
           longitude?: number
           operator?: string | null
           state?: string
@@ -242,6 +287,44 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: []
+      }
+      baggage: {
+        Row: {
+          baggage_status: string | null
+          baggage_type: string | null
+          created_at: string
+          flight_number: string | null
+          tag_id: string
+          ticket_number: string
+          weight: number | null
+        }
+        Insert: {
+          baggage_status?: string | null
+          baggage_type?: string | null
+          created_at?: string
+          flight_number?: string | null
+          tag_id: string
+          ticket_number: string
+          weight?: number | null
+        }
+        Update: {
+          baggage_status?: string | null
+          baggage_type?: string | null
+          created_at?: string
+          flight_number?: string | null
+          tag_id?: string
+          ticket_number?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baggage_ticket_number_fkey"
+            columns: ["ticket_number"]
+            isOneToOne: false
+            referencedRelation: "passenger"
+            referencedColumns: ["ticket_number"]
+          },
+        ]
       }
       boarding_pass_updates: {
         Row: {
@@ -339,6 +422,13 @@ export type Database = {
             foreignKeyName: "boarding_passes_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: true
+            referencedRelation: "booking"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "boarding_passes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
             referencedRelation: "bookings"
             referencedColumns: ["booking_id"]
           },
@@ -410,6 +500,47 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "flights"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      check_in: {
+        Row: {
+          boarding_pass_issued: boolean | null
+          checkin_id: string
+          checkin_method: string | null
+          checkin_status: string | null
+          created_at: string
+          flight_number: string | null
+          seat_confirmed: string | null
+          ticket_number: string
+        }
+        Insert: {
+          boarding_pass_issued?: boolean | null
+          checkin_id: string
+          checkin_method?: string | null
+          checkin_status?: string | null
+          created_at?: string
+          flight_number?: string | null
+          seat_confirmed?: string | null
+          ticket_number: string
+        }
+        Update: {
+          boarding_pass_issued?: boolean | null
+          checkin_id?: string
+          checkin_method?: string | null
+          checkin_status?: string | null
+          created_at?: string
+          flight_number?: string | null
+          seat_confirmed?: string | null
+          ticket_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_in_ticket_number_fkey"
+            columns: ["ticket_number"]
+            isOneToOne: false
+            referencedRelation: "passenger"
+            referencedColumns: ["ticket_number"]
           },
         ]
       }
@@ -502,6 +633,24 @@ export type Database = {
           },
         ]
       }
+      flight_stops: {
+        Row: {
+          flight_number: string
+          stop_location: string
+          stop_number: number
+        }
+        Insert: {
+          flight_number: string
+          stop_location: string
+          stop_number: number
+        }
+        Update: {
+          flight_number?: string
+          stop_location?: string
+          stop_number?: number
+        }
+        Relationships: []
+      }
       flights: {
         Row: {
           actual_arrival_time: string | null
@@ -517,6 +666,7 @@ export type Database = {
           delay_reason: string | null
           departure_datetime: string
           destination_code: string
+          destination_location_id: string | null
           duration_minutes: number
           economy_price: number
           first_class_price: number
@@ -525,8 +675,11 @@ export type Database = {
           gate_number: string | null
           id: string
           is_active: boolean
+          is_bookable: boolean
           is_visible_on_ui: boolean
+          model_id: string | null
           number_of_stops: number
+          origin_location_id: string | null
           premium_economy_price: number
           source_code: string
           terminal: string | null
@@ -545,6 +698,7 @@ export type Database = {
           delay_reason?: string | null
           departure_datetime: string
           destination_code: string
+          destination_location_id?: string | null
           duration_minutes: number
           economy_price: number
           first_class_price: number
@@ -553,8 +707,11 @@ export type Database = {
           gate_number?: string | null
           id?: string
           is_active?: boolean
+          is_bookable?: boolean
           is_visible_on_ui?: boolean
+          model_id?: string | null
           number_of_stops?: number
+          origin_location_id?: string | null
           premium_economy_price: number
           source_code: string
           terminal?: string | null
@@ -573,6 +730,7 @@ export type Database = {
           delay_reason?: string | null
           departure_datetime?: string
           destination_code?: string
+          destination_location_id?: string | null
           duration_minutes?: number
           economy_price?: number
           first_class_price?: number
@@ -581,8 +739,11 @@ export type Database = {
           gate_number?: string | null
           id?: string
           is_active?: boolean
+          is_bookable?: boolean
           is_visible_on_ui?: boolean
+          model_id?: string | null
           number_of_stops?: number
+          origin_location_id?: string | null
           premium_economy_price?: number
           source_code?: string
           terminal?: string | null
@@ -604,7 +765,9 @@ export type Database = {
           gate_number: string
           id: string
           is_active: boolean
+          max_aircraft_size: string | null
           terminal: string
+          terminal_number: string | null
         }
         Insert: {
           airport_code: string
@@ -612,7 +775,9 @@ export type Database = {
           gate_number: string
           id?: string
           is_active?: boolean
+          max_aircraft_size?: string | null
           terminal: string
+          terminal_number?: string | null
         }
         Update: {
           airport_code?: string
@@ -620,7 +785,99 @@ export type Database = {
           gate_number?: string
           id?: string
           is_active?: boolean
+          max_aircraft_size?: string | null
           terminal?: string
+          terminal_number?: string | null
+        }
+        Relationships: []
+      }
+      location: {
+        Row: {
+          airport_name: string | null
+          annual_pax_mn: number | null
+          category: string | null
+          city: string
+          country: string
+          created_at: string
+          iata_code: string | null
+          is_active: boolean
+          latitude: number | null
+          location_id: string
+          longitude: number | null
+          operator: string | null
+          state: string
+          total_gates: number | null
+        }
+        Insert: {
+          airport_name?: string | null
+          annual_pax_mn?: number | null
+          category?: string | null
+          city: string
+          country?: string
+          created_at?: string
+          iata_code?: string | null
+          is_active?: boolean
+          latitude?: number | null
+          location_id: string
+          longitude?: number | null
+          operator?: string | null
+          state: string
+          total_gates?: number | null
+        }
+        Update: {
+          airport_name?: string | null
+          annual_pax_mn?: number | null
+          category?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          iata_code?: string | null
+          is_active?: boolean
+          latitude?: number | null
+          location_id?: string
+          longitude?: number | null
+          operator?: string | null
+          state?: string
+          total_gates?: number | null
+        }
+        Relationships: []
+      }
+      passenger: {
+        Row: {
+          age: number | null
+          contact_info: string | null
+          created_at: string
+          email: string | null
+          is_active: boolean
+          nationality: string | null
+          passenger_name: string
+          passport_id: string | null
+          ticket_number: string
+          user_id: string | null
+        }
+        Insert: {
+          age?: number | null
+          contact_info?: string | null
+          created_at?: string
+          email?: string | null
+          is_active?: boolean
+          nationality?: string | null
+          passenger_name: string
+          passport_id?: string | null
+          ticket_number: string
+          user_id?: string | null
+        }
+        Update: {
+          age?: number | null
+          contact_info?: string | null
+          created_at?: string
+          email?: string | null
+          is_active?: boolean
+          nationality?: string | null
+          passenger_name?: string
+          passport_id?: string | null
+          ticket_number?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -662,6 +919,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      payment: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          payment_id: string
+          payment_method: string
+          payment_status: string
+          payment_timestamp: string
+          ticket_number: string
+          transaction_reference: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          payment_id: string
+          payment_method: string
+          payment_status: string
+          payment_timestamp?: string
+          ticket_number: string
+          transaction_reference?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          payment_id?: string
+          payment_method?: string
+          payment_status?: string
+          payment_timestamp?: string
+          ticket_number?: string
+          transaction_reference?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_ticket_number_fkey"
+            columns: ["ticket_number"]
+            isOneToOne: false
+            referencedRelation: "passenger"
+            referencedColumns: ["ticket_number"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -723,6 +1024,35 @@ export type Database = {
         }
         Relationships: []
       }
+      terminal: {
+        Row: {
+          capacity: number | null
+          location_id: string
+          terminal_name: string
+          terminal_number: string
+        }
+        Insert: {
+          capacity?: number | null
+          location_id: string
+          terminal_name: string
+          terminal_number: string
+        }
+        Update: {
+          capacity?: number | null
+          location_id?: string
+          terminal_name?: string
+          terminal_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terminal_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["location_id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -746,7 +1076,190 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      booking: {
+        Row: {
+          amount_paid: number | null
+          booking_id: string | null
+          booking_status: string | null
+          cabin_class: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          created_at: string | null
+          email: string | null
+          flight_id: string | null
+          passenger_age: number | null
+          passenger_name: string | null
+          passenger_passport_id: string | null
+          passenger_phone: string | null
+          seat_number: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          booking_id?: string | null
+          booking_status?: string | null
+          cabin_class?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          email?: string | null
+          flight_id?: string | null
+          passenger_age?: number | null
+          passenger_name?: string | null
+          passenger_passport_id?: string | null
+          passenger_phone?: string | null
+          seat_number?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          booking_id?: string | null
+          booking_status?: string | null
+          cabin_class?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          email?: string | null
+          flight_id?: string | null
+          passenger_age?: number | null
+          passenger_name?: string | null
+          passenger_passport_id?: string | null
+          passenger_phone?: string | null
+          seat_number?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flight: {
+        Row: {
+          aircraft_type: string | null
+          airline_code: string | null
+          arrival_datetime: string | null
+          business_price: number | null
+          delay_minutes: number | null
+          delay_reason: string | null
+          departure_datetime: string | null
+          destination_code: string | null
+          destination_location_id: string | null
+          duration_minutes: number | null
+          economy_price: number | null
+          first_class_price: number | null
+          flight_date: string | null
+          flight_number: string | null
+          gate_number: string | null
+          is_bookable: boolean | null
+          is_visible_on_ui: boolean | null
+          model_id: string | null
+          origin_location_id: string | null
+          source_code: string | null
+          status: string | null
+          terminal: string | null
+        }
+        Insert: {
+          aircraft_type?: string | null
+          airline_code?: string | null
+          arrival_datetime?: string | null
+          business_price?: number | null
+          delay_minutes?: number | null
+          delay_reason?: string | null
+          departure_datetime?: string | null
+          destination_code?: string | null
+          destination_location_id?: string | null
+          duration_minutes?: number | null
+          economy_price?: number | null
+          first_class_price?: number | null
+          flight_date?: string | null
+          flight_number?: string | null
+          gate_number?: string | null
+          is_bookable?: boolean | null
+          is_visible_on_ui?: boolean | null
+          model_id?: string | null
+          origin_location_id?: string | null
+          source_code?: string | null
+          status?: string | null
+          terminal?: string | null
+        }
+        Update: {
+          aircraft_type?: string | null
+          airline_code?: string | null
+          arrival_datetime?: string | null
+          business_price?: number | null
+          delay_minutes?: number | null
+          delay_reason?: string | null
+          departure_datetime?: string | null
+          destination_code?: string | null
+          destination_location_id?: string | null
+          duration_minutes?: number | null
+          economy_price?: number | null
+          first_class_price?: number | null
+          flight_date?: string | null
+          flight_number?: string | null
+          gate_number?: string | null
+          is_bookable?: boolean | null
+          is_visible_on_ui?: boolean | null
+          model_id?: string | null
+          origin_location_id?: string | null
+          source_code?: string | null
+          status?: string | null
+          terminal?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flights_airline_code_fkey"
+            columns: ["airline_code"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      refund_info: {
+        Row: {
+          initiated_at: string | null
+          initiated_by: string | null
+          payment_id: string | null
+          processed_at: string | null
+          refund_amount: number | null
+          refund_id: string | null
+          refund_reason: string | null
+          refund_status: string | null
+          refund_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          initiated_at?: string | null
+          initiated_by?: string | null
+          payment_id?: string | null
+          processed_at?: string | null
+          refund_amount?: number | null
+          refund_id?: string | null
+          refund_reason?: string | null
+          refund_status?: string | null
+          refund_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          initiated_at?: string | null
+          initiated_by?: string | null
+          payment_id?: string | null
+          processed_at?: string | null
+          refund_amount?: number | null
+          refund_id?: string | null
+          refund_reason?: string | null
+          refund_status?: string | null
+          refund_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_cancel_flight: {
