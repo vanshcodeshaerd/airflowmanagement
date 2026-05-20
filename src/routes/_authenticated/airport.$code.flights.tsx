@@ -330,7 +330,8 @@ function BookingDialog({
   onClose: () => void;
   onBooked: (id: string) => void;
 }) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [bookingId, setBookingId] = useState<string>("");
   const [form, setForm] = useState({
     passengerName: "",
     passengerAge: "",
@@ -354,10 +355,13 @@ function BookingDialog({
         },
       }),
     onSuccess: (res) => {
-      toast.success(`Booking confirmed: ${res.bookingId}`);
-      onBooked(res.bookingId);
+      setBookingId(res.bookingId);
+      setStep(3);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      toast.error(e.message);
+      setStep(2);
+    },
   });
 
   const price = priceFor(flight, cabin);
