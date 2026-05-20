@@ -299,8 +299,9 @@ export function AirportDashboard({ code }: Props) {
             href={airport.contact_phone ? `tel:${airport.contact_phone}` : undefined}
           />
           <QuickLink
-            icon={<Calendar className="w-5 h-5" />}
-            label="Facilities"
+            icon={<Receipt className="w-5 h-5" />}
+            label="Request Refund"
+            to="/refund"
           />
           <QuickLink
             icon={<Headphones className="w-5 h-5" />}
