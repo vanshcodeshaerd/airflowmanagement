@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Toaster } from "@/components/ui/sonner";
 
-export const Route = createFileRoute("/_admin")({
+export const Route = createFileRoute("/admin")({
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
     const { data, error } = await supabase.auth.getUser();

@@ -10,8 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAirportsRouteImport } from './routes/admin.airports'
+import { Route as AdminAirportsCodeRouteImport } from './routes/admin.airports.$code'
 import { Route as AuthenticatedDashboardAirportsRouteImport } from './routes/_authenticated/dashboard.airports'
 import { Route as AuthenticatedAirportCodeFlightsRouteImport } from './routes/_authenticated/airport.$code.flights'
 import { Route as AuthenticatedAirportCodeFlightStatusRouteImport } from './routes/_authenticated/airport.$code.flight-status'
@@ -23,6 +27,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -31,6 +40,21 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAirportsRoute = AdminAirportsRouteImport.update({
+  id: '/airports',
+  path: '/airports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAirportsCodeRoute = AdminAirportsCodeRouteImport.update({
+  id: '/$code',
+  path: '/$code',
+  getParentRoute: () => AdminAirportsRoute,
 } as any)
 const AuthenticatedDashboardAirportsRoute =
   AuthenticatedDashboardAirportsRouteImport.update({
@@ -65,8 +89,12 @@ const AuthenticatedAirportCodeBoardingPassRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/admin/airports': typeof AdminAirportsRouteWithChildren
+  '/admin/': typeof AdminIndexRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
+  '/admin/airports/$code': typeof AdminAirportsCodeRoute
   '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
   '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
   '/airport/$code/flight-status': typeof AuthenticatedAirportCodeFlightStatusRoute
@@ -75,7 +103,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin/airports': typeof AdminAirportsRouteWithChildren
+  '/admin': typeof AdminIndexRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
+  '/admin/airports/$code': typeof AdminAirportsCodeRoute
   '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
   '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
   '/airport/$code/flight-status': typeof AuthenticatedAirportCodeFlightStatusRoute
@@ -85,8 +116,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/admin/airports': typeof AdminAirportsRouteWithChildren
+  '/admin/': typeof AdminIndexRoute
   '/_authenticated/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
+  '/admin/airports/$code': typeof AdminAirportsCodeRoute
   '/_authenticated/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
   '/_authenticated/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
   '/_authenticated/airport/$code/flight-status': typeof AuthenticatedAirportCodeFlightStatusRoute
@@ -96,8 +131,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/auth'
+    | '/admin/airports'
+    | '/admin/'
     | '/dashboard/airports'
+    | '/admin/airports/$code'
     | '/airport/$code/boarding-pass'
     | '/airport/$code/dashboard'
     | '/airport/$code/flight-status'
@@ -106,7 +145,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/admin/airports'
+    | '/admin'
     | '/dashboard/airports'
+    | '/admin/airports/$code'
     | '/airport/$code/boarding-pass'
     | '/airport/$code/dashboard'
     | '/airport/$code/flight-status'
@@ -115,8 +157,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/admin'
     | '/auth'
+    | '/admin/airports'
+    | '/admin/'
     | '/_authenticated/dashboard/airports'
+    | '/admin/airports/$code'
     | '/_authenticated/airport/$code/boarding-pass'
     | '/_authenticated/airport/$code/dashboard'
     | '/_authenticated/airport/$code/flight-status'
@@ -126,6 +172,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
 }
 
@@ -136,6 +183,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -151,6 +205,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/airports': {
+      id: '/admin/airports'
+      path: '/airports'
+      fullPath: '/admin/airports'
+      preLoaderRoute: typeof AdminAirportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/airports/$code': {
+      id: '/admin/airports/$code'
+      path: '/$code'
+      fullPath: '/admin/airports/$code'
+      preLoaderRoute: typeof AdminAirportsCodeRouteImport
+      parentRoute: typeof AdminAirportsRoute
     }
     '/_authenticated/dashboard/airports': {
       id: '/_authenticated/dashboard/airports'
@@ -213,11 +288,46 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface AdminAirportsRouteChildren {
+  AdminAirportsCodeRoute: typeof AdminAirportsCodeRoute
+}
+
+const AdminAirportsRouteChildren: AdminAirportsRouteChildren = {
+  AdminAirportsCodeRoute: AdminAirportsCodeRoute,
+}
+
+const AdminAirportsRouteWithChildren = AdminAirportsRoute._addFileChildren(
+  AdminAirportsRouteChildren,
+)
+
+interface AdminRouteChildren {
+  AdminAirportsRoute: typeof AdminAirportsRouteWithChildren
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAirportsRoute: AdminAirportsRouteWithChildren,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

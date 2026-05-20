@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2 } from "lucide-react";
 
-export const Route = createFileRoute("/_admin/airports")({
+export const Route = createFileRoute("/admin/airports")({
   component: AdminAirportsList,
 });
 
