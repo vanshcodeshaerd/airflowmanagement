@@ -92,12 +92,80 @@ export const changeFlightGate = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ flightId: z.string().uuid(), terminal: z.string().min(1).max(20), gate: z.string().min(1).max(20) }).parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { error } = await context.supabase.rpc("admin_change_gate", {
-      p_flight_id: data.flightId,
-      p_new_terminal: data.terminal,
-      p_new_gate: data.gate,
+
+    const { data: flight, error: flightError } = await supabaseAdmin
+      .from("flights")
+      .select("*")
+      .eq("id", data.flightId)
+      .maybeSingle();
+    if (flightError) throw new Error(flightError.message);
+    if (!flight) throw new Error("Flight not found");
+
+    const { data: gateRow, error: gateError } = await supabaseAdmin
+      .from("gates")
+      .select("id")
+      .eq("airport_code", flight.source_code)
+      .eq("terminal", data.terminal)
+      .eq("gate_number", data.gate)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (gateError) throw new Error(gateError.message);
+    if (!gateRow) throw new Error(`Gate ${data.gate} at terminal ${data.terminal} not found for airport ${flight.source_code}`);
+
+    const departureAt = new Date(flight.departure_datetime).getTime();
+    const blockedUntil = new Date(flight.arrival_datetime ?? departureAt + flight.duration_minutes * 60000);
+    blockedUntil.setMinutes(blockedUntil.getMinutes() + 15);
+
+    const { data: activeAssignments, error: assignmentError } = await supabaseAdmin
+      .from("flight_gate_assignments")
+      .select("flight_id, gate_blocked_until")
+      .eq("gate_id", gateRow.id)
+      .eq("is_active", true)
+      .neq("flight_id", data.flightId)
+      .gt("gate_blocked_until", flight.departure_datetime);
+    if (assignmentError) throw new Error(assignmentError.message);
+
+    const conflictingFlightIds = (activeAssignments ?? []).map((assignment) => assignment.flight_id);
+    if (conflictingFlightIds.length > 0) {
+      const { data: conflicts, error: conflictError } = await supabaseAdmin
+        .from("flights")
+        .select("id")
+        .in("id", conflictingFlightIds)
+        .lt("departure_datetime", blockedUntil.toISOString())
+        .limit(1);
+      if (conflictError) throw new Error(conflictError.message);
+      if ((conflicts ?? []).length > 0) throw new Error(`Gate ${data.gate} conflicts with another flight in this time window`);
+    }
+
+    const oldTerminal = flight.terminal;
+    const oldGate = flight.gate_number;
+    await supabaseAdmin.from("flight_gate_assignments").update({ is_active: false }).eq("flight_id", data.flightId).eq("is_active", true);
+    const { error: insertError } = await supabaseAdmin.from("flight_gate_assignments").insert({
+      flight_id: data.flightId,
+      gate_id: gateRow.id,
+      airport_code: flight.source_code,
+      terminal: data.terminal,
+      gate_number: data.gate,
+      gate_blocked_until: blockedUntil.toISOString(),
     });
-    if (error) throw new Error(error.message);
+    if (insertError) throw new Error(insertError.message);
+
+    const { error: updateError } = await supabaseAdmin.from("flights").update({ gate_number: data.gate, terminal: data.terminal }).eq("id", data.flightId);
+    if (updateError) throw new Error(updateError.message);
+
+    await supabaseAdmin.from("boarding_passes").update({
+      gate_number: data.gate,
+      is_updated: true,
+      update_reason: `GATE_CHANGE: ${oldGate ?? "TBD"} → ${data.gate}`,
+    }).eq("flight_id", data.flightId).eq("is_valid", true);
+    await supabaseAdmin.from("admin_actions").insert({
+      admin_id: context.userId,
+      action_type: "CHANGE_GATE",
+      target_table: "flights",
+      target_id: data.flightId,
+      previous_value: { terminal: oldTerminal, gate: oldGate },
+      new_value: { terminal: data.terminal, gate: data.gate },
+    });
     return { ok: true };
   });
 
