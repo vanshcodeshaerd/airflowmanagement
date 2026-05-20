@@ -1,33 +1,19 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, LayoutGrid, List, Plus, LogOut } from "lucide-react";
+import { ArrowLeft, LayoutGrid, List, LogOut } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  listAirports,
-  deleteAirport as deleteAirportFn,
-} from "@/lib/airports.functions";
-import { getCurrentRole } from "@/lib/airport-role.functions";
+import { listAirports } from "@/lib/airports.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Airport, SortKey, ViewMode, AirportCategory, AirportStatus } from "./types";
 import { FilterBar } from "./FilterBar";
 import { AirportCard } from "./AirportCard";
 import { AirportDetailModal } from "./AirportDetailModal";
-import { AirportFormModal } from "./AirportFormModal";
-import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
-import { toast } from "sonner";
 
-interface Props {
-  mode: "user" | "admin";
-}
-
-export function AirportDirectoryPage({ mode }: Props) {
+export function AirportDirectoryPage() {
   const navigate = useNavigate();
-  const qc = useQueryClient();
   const list = useServerFn(listAirports);
-  const role = useServerFn(getCurrentRole);
-  const delFn = useServerFn(deleteAirportFn);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<AirportCategory | "">("");
@@ -39,23 +25,6 @@ export function AirportDirectoryPage({ mode }: Props) {
   const perPage = 15;
 
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [editAirport, setEditAirport] = useState<Airport | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
-  const [deleteAirport, setDeleteAirport] = useState<Airport | null>(null);
-
-  const roleQuery = useQuery({
-    queryKey: ["role"],
-    queryFn: () => role(),
-    staleTime: 60_000,
-  });
-
-  // Block non-admins from /admin/airports
-  useEffect(() => {
-    if (mode === "admin" && roleQuery.data && roleQuery.data.role !== "admin") {
-      toast.error("Admin access required");
-      navigate({ to: "/dashboard/airports" as never });
-    }
-  }, [mode, roleQuery.data, navigate]);
 
   const airportsQuery = useQuery({
     queryKey: ["airports", { search, category, stateFilter, status, sort }],
@@ -74,16 +43,6 @@ export function AirportDirectoryPage({ mode }: Props) {
   useEffect(() => {
     setPage(1);
   }, [search, category, stateFilter, status, sort]);
-
-  const deleteMut = useMutation({
-    mutationFn: (id: string) => delFn({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Airport deleted");
-      qc.invalidateQueries({ queryKey: ["airports"] });
-      setDeleteAirport(null);
-    },
-    onError: (e: Error) => toast.error(e.message ?? "Failed to delete"),
-  });
 
   const all = (airportsQuery.data ?? []) as Airport[];
   const total = all.length;
@@ -109,8 +68,6 @@ export function AirportDirectoryPage({ mode }: Props) {
     navigate({ to: "/auth" as never });
   }
 
-  const isAdmin = mode === "admin" && roleQuery.data?.role === "admin";
-
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 bg-white border-b border-border">
@@ -123,22 +80,6 @@ export function AirportDirectoryPage({ mode }: Props) {
             <span className="font-display font-extrabold">AirFlow</span>
           </Link>
           <div className="flex items-center gap-3">
-            {mode === "user" && roleQuery.data?.role === "admin" && (
-              <Link
-                to="/admin/airports"
-                className="text-[12px] font-ui font-semibold text-accent hover:underline"
-              >
-                Admin view
-              </Link>
-            )}
-            {mode === "admin" && (
-              <Link
-                to="/dashboard/airports"
-                className="text-[12px] font-ui font-semibold text-accent hover:underline"
-              >
-                User view
-              </Link>
-            )}
             <button
               onClick={handleSignOut}
               className="flex items-center gap-1.5 text-[12px] font-ui font-semibold text-muted-foreground hover:text-primary"
@@ -160,29 +101,18 @@ export function AirportDirectoryPage({ mode }: Props) {
             <Link to="/" className="hover:text-accent">
               Home
             </Link>{" "}
-            ›{" "}
-            <span>
-              {mode === "admin" ? "Admin" : "Dashboard"}
-            </span>{" "}
-            › <span className="text-primary">Airports</span>
+            › <span>Dashboard</span> ›{" "}
+            <span className="text-primary">Airports</span>
           </nav>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="font-display font-extrabold text-[40px] leading-tight text-primary">
-                {mode === "admin" ? "Manage Airports" : "Select Your Airport"}
+                Select Your Airport
               </h1>
               <p className="text-[15px] text-muted-foreground font-sans mt-1">
                 Browse all airports across India
               </p>
             </div>
-            {isAdmin && (
-              <button
-                onClick={() => setAddOpen(true)}
-                className="inline-flex items-center gap-2 bg-accent hover:bg-accent-strong text-white font-ui font-bold uppercase tracking-wider text-[13px] px-5 py-2.5 rounded-none transition-all hover:-translate-y-0.5"
-              >
-                <Plus className="w-4 h-4" /> Add Airport
-              </button>
-            )}
           </div>
         </motion.div>
 
@@ -253,10 +183,7 @@ export function AirportDirectoryPage({ mode }: Props) {
               >
                 <AirportCard
                   airport={a}
-                  mode={isAdmin ? "admin" : "user"}
                   onView={() => setDetailId(a.id)}
-                  onEdit={() => setEditAirport(a)}
-                  onDelete={() => setDeleteAirport(a)}
                   onSelect={() =>
                     navigate({
                       to: "/airport/$code/dashboard",
@@ -286,10 +213,7 @@ export function AirportDirectoryPage({ mode }: Props) {
                         <AirportCard
                           key={a.id}
                           airport={a}
-                          mode={isAdmin ? "admin" : "user"}
                           onView={() => setDetailId(a.id)}
-                          onEdit={() => setEditAirport(a)}
-                          onDelete={() => setDeleteAirport(a)}
                           onSelect={() =>
                             navigate({
                               to: "/airport/$code/dashboard",
@@ -329,29 +253,6 @@ export function AirportDirectoryPage({ mode }: Props) {
 
       {detailId && (
         <AirportDetailModal id={detailId} onClose={() => setDetailId(null)} />
-      )}
-      {addOpen && (
-        <AirportFormModal
-          mode="create"
-          onClose={() => setAddOpen(false)}
-          onSuccess={() => qc.invalidateQueries({ queryKey: ["airports"] })}
-        />
-      )}
-      {editAirport && (
-        <AirportFormModal
-          mode="edit"
-          airport={editAirport}
-          onClose={() => setEditAirport(null)}
-          onSuccess={() => qc.invalidateQueries({ queryKey: ["airports"] })}
-        />
-      )}
-      {deleteAirport && (
-        <DeleteConfirmDialog
-          airport={deleteAirport}
-          isDeleting={deleteMut.isPending}
-          onConfirm={() => deleteMut.mutate(deleteAirport.id)}
-          onCancel={() => setDeleteAirport(null)}
-        />
       )}
     </div>
   );

@@ -4,10 +4,7 @@ import { getDirectionsUrl } from "./utils";
 
 interface Props {
   airport: Airport;
-  mode: "user" | "admin";
   onView: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
   onSelect: () => void;
 }
 
@@ -23,7 +20,7 @@ const statusBadge: Record<Airport["status"], string> = {
   Proposed: "bg-muted text-muted-foreground",
 };
 
-export function AirportCard({ airport, mode, onView, onEdit, onDelete, onSelect }: Props) {
+export function AirportCard({ airport, onView, onSelect }: Props) {
   return (
     <article className="group bg-white border border-border rounded-none p-5 shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)] hover:border-accent hover:-translate-y-1 transition-all duration-300 flex flex-col">
       <header className="flex items-start justify-between gap-3">
@@ -91,43 +88,18 @@ export function AirportCard({ airport, mode, onView, onEdit, onDelete, onSelect 
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        {mode === "user" ? (
-          <>
-            <button
-              onClick={onSelect}
-              className="bg-accent hover:bg-accent-strong text-white font-ui font-bold uppercase tracking-wider text-[12px] py-2.5 rounded-none transition"
-            >
-              Select
-            </button>
-            <button
-              onClick={onView}
-              className="border-2 border-accent text-accent hover:bg-sky-soft font-ui font-bold uppercase tracking-wider text-[12px] py-2 rounded-none transition"
-            >
-              Details
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={onView}
-              className="border-2 border-primary text-primary hover:bg-muted font-ui font-bold uppercase tracking-wider text-[11px] py-2 rounded-none transition col-span-2"
-            >
-              View
-            </button>
-            <button
-              onClick={onEdit}
-              className="bg-primary hover:bg-primary-deep text-white font-ui font-bold uppercase tracking-wider text-[11px] py-2 rounded-none transition"
-            >
-              Edit
-            </button>
-            <button
-              onClick={onDelete}
-              className="bg-destructive hover:bg-destructive/85 text-white font-ui font-bold uppercase tracking-wider text-[11px] py-2 rounded-none transition"
-            >
-              Delete
-            </button>
-          </>
-        )}
+        <button
+          onClick={onSelect}
+          className="bg-accent hover:bg-accent-strong text-white font-ui font-bold uppercase tracking-wider text-[12px] py-2.5 rounded-none transition"
+        >
+          Select
+        </button>
+        <button
+          onClick={onView}
+          className="border-2 border-accent text-accent hover:bg-sky-soft font-ui font-bold uppercase tracking-wider text-[12px] py-2 rounded-none transition"
+        >
+          Details
+        </button>
       </div>
     </article>
   );
