@@ -254,8 +254,7 @@ export const cancelOwnDelayedBooking = createServerFn({ method: "POST" })
     await supabase
       .from("bookings")
       .update({
-        booking_status: "Cancelled",
-        cancelled_at: new Date().toISOString(),
+        booking_status: "Cancellation Requested",
         cancellation_reason: data.reason ?? "Cancelled due to delay",
         refund_ref_id: refundReqId,
       })
@@ -266,8 +265,8 @@ export const cancelOwnDelayedBooking = createServerFn({ method: "POST" })
       booking_id: booking.booking_id,
       flight_id: booking.flight_id,
       notification_type: "REFUND_INITIATED",
-      title: "Booking cancelled — refund initiated",
-      message: `Refund ${refundReqId} of ₹${booking.total_amount} has been initiated and will be credited shortly.`,
+      title: "Cancellation request submitted",
+      message: `Refund request ${refundReqId} for ₹${booking.total_amount} is awaiting admin approval. You'll be notified once it's processed.`,
     });
 
     return { refund_request_id: refundReqId };
