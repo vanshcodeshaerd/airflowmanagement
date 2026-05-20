@@ -27,13 +27,14 @@ export const Route = createFileRoute("/admin/operations")({
 const cellCls = "px-3 py-2 text-[12px] text-white/85 font-ui border-b border-white/5";
 const headCls = "px-3 py-2 text-[10px] uppercase tracking-wider text-white/50 font-ui font-bold text-left bg-white/5";
 
-function Section<T>({ fn, columns, rowKey, renderRow }: {
+function Section<T>({ queryKey, fn, columns, rowKey, renderRow }: {
+  queryKey: string;
   fn: () => Promise<T[]>;
   columns: string[];
   rowKey: (r: T) => string;
   renderRow: (r: T) => React.ReactNode;
 }) {
-  const { data, isLoading } = useQuery({ queryKey: [fn.name || Math.random().toString()], queryFn: fn });
+  const { data, isLoading } = useQuery({ queryKey: ["ops", queryKey], queryFn: fn });
   if (isLoading) return <div className="flex items-center justify-center py-10 text-white/60"><Loader2 className="w-5 h-5 animate-spin" /></div>;
   const rows = (data ?? []) as T[];
   return (
