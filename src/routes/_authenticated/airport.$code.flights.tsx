@@ -467,6 +467,25 @@ function BookingDialog({
         )}
 
         {step === 3 && (
+          <div className="space-y-3">
+            <div className="rounded-none border-2 border-muted bg-muted/40 p-3 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Booking ID</span>
+                <span className="font-mono font-bold">{bookingId}</span>
+              </div>
+            </div>
+            <UpiPaymentBox
+              bookingId={bookingId}
+              amount={price}
+              onPaid={() => {
+                toast.success(`Booking confirmed: ${bookingId}`);
+                setTimeout(() => onBooked(bookingId), 800);
+              }}
+            />
+          </div>
+        )}
+
+        {step === 4 && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
@@ -484,11 +503,11 @@ function BookingDialog({
               <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
               <Button
                 onClick={() => {
-                  setStep(3);
+                  setStep(4);
                   mut.mutate();
                 }}
               >
-                Confirm booking
+                Confirm & Proceed to Pay
               </Button>
             </>
           )}
