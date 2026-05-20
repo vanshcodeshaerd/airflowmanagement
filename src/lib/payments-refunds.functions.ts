@@ -73,7 +73,7 @@ export const completeUpiPayment = createServerFn({ method: "POST" })
     const txn = genTxnId(booking.booking_id);
     const paymentId = `PAY-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
 
-    const { error: pe } = await supabase.from("payment").insert({
+    const { error: pe } = await supabaseAdmin.from("payment").insert({
       payment_id: paymentId,
       ticket_number: booking.booking_id,
       booking_id: booking.booking_id,
