@@ -40,8 +40,3 @@ export function passwordStrength(pwd: string): { score: 0 | 1 | 2 | 3; label: st
   return { score: score as 0 | 1 | 2 | 3, label };
 }
 
-export const ADMIN_EMAIL = "admin_demo@airportms.com";
-export const ADMIN_PASSWORD = "Demo123!ADMIN2024";
-export function isAdminCredential(email: string, password: string) {
-  return email.trim().toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD;
-}
