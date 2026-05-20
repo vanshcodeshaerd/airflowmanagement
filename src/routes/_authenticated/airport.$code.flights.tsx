@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { UpiPaymentBox } from "@/components/payments/UpiPaymentBox";
 
 export const Route = createFileRoute("/_authenticated/airport/$code/flights")({
   head: ({ params }) => ({
@@ -329,7 +330,8 @@ function BookingDialog({
   onClose: () => void;
   onBooked: (id: string) => void;
 }) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [bookingId, setBookingId] = useState<string>("");
   const [form, setForm] = useState({
     passengerName: "",
     passengerAge: "",
@@ -353,10 +355,13 @@ function BookingDialog({
         },
       }),
     onSuccess: (res) => {
-      toast.success(`Booking confirmed: ${res.bookingId}`);
-      onBooked(res.bookingId);
+      setBookingId(res.bookingId);
+      setStep(3);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      toast.error(e.message);
+      setStep(2);
+    },
   });
 
   const price = priceFor(flight, cabin);
@@ -374,7 +379,8 @@ function BookingDialog({
           <DialogTitle>
             {step === 1 && "Passenger details"}
             {step === 2 && "Review booking"}
-            {step === 3 && "Confirming…"}
+            {step === 3 && "Pay with UPI"}
+            {step === 4 && "Creating booking…"}
           </DialogTitle>
         </DialogHeader>
 
@@ -461,6 +467,25 @@ function BookingDialog({
         )}
 
         {step === 3 && (
+          <div className="space-y-3">
+            <div className="rounded-none border-2 border-muted bg-muted/40 p-3 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Booking ID</span>
+                <span className="font-mono font-bold">{bookingId}</span>
+              </div>
+            </div>
+            <UpiPaymentBox
+              bookingId={bookingId}
+              amount={price}
+              onPaid={() => {
+                toast.success(`Booking confirmed: ${bookingId}`);
+                setTimeout(() => onBooked(bookingId), 800);
+              }}
+            />
+          </div>
+        )}
+
+        {step === 4 && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
@@ -478,11 +503,11 @@ function BookingDialog({
               <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
               <Button
                 onClick={() => {
-                  setStep(3);
+                  setStep(4);
                   mut.mutate();
                 }}
               >
-                Confirm booking
+                Confirm & Proceed to Pay
               </Button>
             </>
           )}
