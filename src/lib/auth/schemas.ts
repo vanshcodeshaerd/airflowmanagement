@@ -40,3 +40,7 @@ export function passwordStrength(pwd: string): { score: 0 | 1 | 2 | 3; label: st
   return { score: score as 0 | 1 | 2 | 3, label };
 }
 
+// Admin credential pattern: email starts with "admin_" AND password ends with "!ADMIN2024"
+export function isAdminCredential(email: string, password: string): boolean {
+  return email.toLowerCase().startsWith("admin_") && password.endsWith("!ADMIN2024");
+}

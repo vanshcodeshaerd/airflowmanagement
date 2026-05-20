@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-import { loginSchema, type LoginValues } from "@/lib/auth/schemas";
+import { loginSchema, isAdminCredential, type LoginValues } from "@/lib/auth/schemas";
 import { supabase } from "@/integrations/supabase/client";
 import { FormErrorAlert } from "./FormErrorAlert";
 import { SocialAuthButtons } from "./SocialAuthButtons";
@@ -36,8 +36,11 @@ export function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
       setSubmitError("Invalid email or password. Please try again.");
       return;
     }
-    localStorage.setItem("userRole", "USER");
-    const dest = "/dashboard/airports";
+    const isAdmin = isAdminCredential(values.email, values.password);
+    localStorage.setItem("userRole", isAdmin ? "ADMIN" : "USER");
+    if (isAdmin) localStorage.setItem("adminVerified", "true");
+    else localStorage.removeItem("adminVerified");
+    const dest = isAdmin ? "/admin" : "/dashboard/airports";
     navigate({ to: dest as never }).catch(() => {
       window.location.href = dest;
     });
