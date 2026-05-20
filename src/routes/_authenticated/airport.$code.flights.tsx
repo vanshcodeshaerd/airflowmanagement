@@ -332,6 +332,7 @@ function BookingDialog({
 }) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [bookingId, setBookingId] = useState<string>("");
+  const [paidTxn, setPaidTxn] = useState<string>("");
   const [form, setForm] = useState({
     passengerName: "",
     passengerAge: "",
@@ -477,9 +478,9 @@ function BookingDialog({
             <UpiPaymentBox
               bookingId={bookingId}
               amount={price}
-              onPaid={() => {
-                toast.success(`Booking confirmed: ${bookingId}`);
-                setTimeout(() => onBooked(bookingId), 800);
+              onPaid={(txn) => {
+                setPaidTxn(txn);
+                toast.success(`Payment successful. Booking confirmed: ${bookingId}`);
               }}
             />
           </div>
@@ -510,6 +511,11 @@ function BookingDialog({
                 Confirm & Proceed to Pay
               </Button>
             </>
+          )}
+          {step === 3 && paidTxn && (
+            <Button onClick={() => onBooked(bookingId)}>
+              View Boarding Pass
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

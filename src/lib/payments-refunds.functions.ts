@@ -73,6 +73,21 @@ export const completeUpiPayment = createServerFn({ method: "POST" })
     const txn = genTxnId(booking.booking_id);
     const paymentId = `PAY-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
 
+    const { error: passengerError } = await supabaseAdmin.from("passenger").upsert(
+      {
+        ticket_number: booking.booking_id,
+        passenger_name: booking.passenger_name,
+        age: booking.passenger_age,
+        contact_info: booking.passenger_phone,
+        email: booking.email,
+        passport_id: booking.passenger_passport_id,
+        user_id: userId,
+        is_active: true,
+      },
+      { onConflict: "ticket_number" },
+    );
+    if (passengerError) throw new Error(passengerError.message);
+
     const { error: pe } = await supabaseAdmin.from("payment").insert({
       payment_id: paymentId,
       ticket_number: booking.booking_id,
