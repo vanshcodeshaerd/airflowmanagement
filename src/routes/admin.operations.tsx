@@ -27,13 +27,14 @@ export const Route = createFileRoute("/admin/operations")({
 const cellCls = "px-3 py-2 text-[12px] text-white/85 font-ui border-b border-white/5";
 const headCls = "px-3 py-2 text-[10px] uppercase tracking-wider text-white/50 font-ui font-bold text-left bg-white/5";
 
-function Section<T>({ fn, columns, rowKey, renderRow }: {
+function Section<T>({ queryKey, fn, columns, rowKey, renderRow }: {
+  queryKey: string;
   fn: () => Promise<T[]>;
   columns: string[];
   rowKey: (r: T) => string;
   renderRow: (r: T) => React.ReactNode;
 }) {
-  const { data, isLoading } = useQuery({ queryKey: [fn.name || Math.random().toString()], queryFn: fn });
+  const { data, isLoading } = useQuery({ queryKey: ["ops", queryKey], queryFn: fn });
   if (isLoading) return <div className="flex items-center justify-center py-10 text-white/60"><Loader2 className="w-5 h-5 animate-spin" /></div>;
   const rows = (data ?? []) as T[];
   return (
@@ -104,6 +105,7 @@ function OperationsPage() {
 
         <TabsContent value="payments" className="mt-4">
           <Section<Pay>
+            queryKey="payments"
             fn={paymentsFn as never}
             columns={["Payment ID", "Ticket", "Booking", "Amount", "Method", "Status", "Actions"]}
             rowKey={(r) => r.payment_id}
@@ -129,6 +131,7 @@ function OperationsPage() {
 
         <TabsContent value="baggage" className="mt-4">
           <Section<Bag>
+            queryKey="baggage"
             fn={baggageFn as never}
             columns={["Tag", "Ticket", "Flight", "Weight", "Type", "Status", "Actions"]}
             rowKey={(r) => r.tag_id}
@@ -154,6 +157,7 @@ function OperationsPage() {
 
         <TabsContent value="checkins" className="mt-4">
           <Section<Chk>
+            queryKey="checkins"
             fn={checkInsFn as never}
             columns={["Check-in ID", "Ticket", "Flight", "Seat", "Method", "Status", "Actions"]}
             rowKey={(r) => r.checkin_id}
@@ -179,6 +183,7 @@ function OperationsPage() {
 
         <TabsContent value="passengers" className="mt-4">
           <Section<Pax>
+            queryKey="passengers"
             fn={passengersFn as never}
             columns={["Ticket", "Name", "Email", "Contact", "Nationality", "Age"]}
             rowKey={(r) => r.ticket_number}
@@ -195,6 +200,7 @@ function OperationsPage() {
 
         <TabsContent value="stops" className="mt-4">
           <Section<Stop>
+            queryKey="stops"
             fn={stopsFn as never}
             columns={["Flight", "Stop #", "Location"]}
             rowKey={(r) => `${r.flight_number}-${r.stop_number}`}
@@ -208,6 +214,7 @@ function OperationsPage() {
 
         <TabsContent value="aircraft" className="mt-4">
           <Section<Ac>
+            queryKey="aircraft"
             fn={aircraftFn as never}
             columns={["Model", "Airline", "Type", "Capacity", "Economy", "Business", "First"]}
             rowKey={(r) => r.model_id}
@@ -225,6 +232,7 @@ function OperationsPage() {
 
         <TabsContent value="terminals" className="mt-4">
           <Section<Term>
+            queryKey="terminals"
             fn={terminalsFn as never}
             columns={["Terminal #", "Location", "Name", "Capacity"]}
             rowKey={(r) => `${r.location_id}-${r.terminal_number}`}
