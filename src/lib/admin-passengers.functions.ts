@@ -81,7 +81,7 @@ export const forceCheckIn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { error } = await supabaseAdmin.from("bookings")
-      .update({ booking_status: "Checked-In" }).eq("id", data.bookingRowId);
+      .update({ booking_status: "Checked-In" }).eq("booking_id", data.bookingRowId);
     if (error) throw new Error(error.message);
     await supabaseAdmin.from("admin_actions").insert({
       admin_id: context.userId, action_type: "FORCE_CHECKIN",
@@ -97,7 +97,7 @@ export const markBoarded = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { error } = await supabaseAdmin.from("bookings")
-      .update({ booking_status: "Boarded" }).eq("id", data.bookingRowId);
+      .update({ booking_status: "Boarded" }).eq("booking_id", data.bookingRowId);
     if (error) throw new Error(error.message);
     await supabaseAdmin.from("admin_actions").insert({
       admin_id: context.userId, action_type: "MARK_BOARDED",
@@ -113,7 +113,7 @@ export const markNoShow = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { error } = await supabaseAdmin.from("bookings")
-      .update({ booking_status: "NoShow" }).eq("id", data.bookingRowId);
+      .update({ booking_status: "NoShow" }).eq("booking_id", data.bookingRowId);
     if (error) throw new Error(error.message);
     await supabaseAdmin.from("admin_actions").insert({
       admin_id: context.userId, action_type: "MARK_NOSHOW",
@@ -132,11 +132,11 @@ export const cancelBooking = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { data: b } = await supabaseAdmin.from("bookings")
-      .select("booking_id,user_id,total_amount,flight_id").eq("id", data.bookingRowId).maybeSingle();
+      .select("booking_id,user_id,total_amount,flight_id").eq("booking_id", data.bookingRowId).maybeSingle();
     if (!b) throw new Error("Booking not found");
     const { error } = await supabaseAdmin.from("bookings")
       .update({ booking_status: "Cancelled", cancellation_reason: data.reason, cancelled_at: new Date().toISOString() })
-      .eq("id", data.bookingRowId);
+      .eq("booking_id", data.bookingRowId);
     if (error) throw new Error(error.message);
     await supabaseAdmin.from("boarding_passes")
       .update({ is_valid: false, invalidation_reason: data.reason })

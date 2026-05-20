@@ -321,7 +321,7 @@ function FlightPanel({ flightId, airportCode, onClose, onMutated }: { flightId: 
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><Users className="w-4 h-4" />{pax.data?.passengers.length ?? 0} passengers</div>
               {(pax.data?.passengers ?? []).map((p) => (
-                <div key={p.id} className="border border-border p-3 flex items-center justify-between gap-3">
+                <div key={p.booking_id} className="border border-border p-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-display font-bold text-primary text-[14px]">{p.passenger_name} <span className="text-muted-foreground font-sans font-normal text-[12px]">· {p.seat_number} · {p.cabin_class}</span></div>
                     <div className="text-[11px] text-muted-foreground truncate">{p.booking_id} · {p.email}</div>
@@ -330,12 +330,12 @@ function FlightPanel({ flightId, airportCode, onClose, onMutated }: { flightId: 
                     <StatusPill status={p.booking_status} />
                     <PaxActions
                       status={p.booking_status}
-                      onCheckIn={() => handle(() => checkInFn({ data: { bookingRowId: p.id } }), "Checked in")}
-                      onBoard={() => handle(() => boardFn({ data: { bookingRowId: p.id } }), "Boarded")}
-                      onNoShow={() => handle(() => noShowFn({ data: { bookingRowId: p.id } }), "Marked no-show")}
+                      onCheckIn={() => handle(() => checkInFn({ data: { bookingRowId: p.booking_id } }), "Checked in")}
+                      onBoard={() => handle(() => boardFn({ data: { bookingRowId: p.booking_id } }), "Boarded")}
+                      onNoShow={() => handle(() => noShowFn({ data: { bookingRowId: p.booking_id } }), "Marked no-show")}
                       onCancel={() => {
                         const r = prompt("Cancellation reason?");
-                        if (r && r.length >= 2) handle(() => cancelBookingFn({ data: { bookingRowId: p.id, reason: r } }), "Booking cancelled");
+                        if (r && r.length >= 2) handle(() => cancelBookingFn({ data: { bookingRowId: p.booking_id, reason: r } }), "Booking cancelled");
                       }}
                     />
                   </div>

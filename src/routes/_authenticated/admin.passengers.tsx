@@ -120,19 +120,19 @@ function AdminPassengers() {
               <tbody>
                 {today.isLoading && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Loading…</td></tr>}
                 {(today.data?.passengers ?? []).map((p) => (
-                  <tr key={p.id} className="border-t border-border hover:bg-muted/20">
+                  <tr key={p.booking_id} className="border-t border-border hover:bg-muted/20">
                     <td className="p-3"><div className="font-semibold text-primary">{p.passenger_name}</div><div className="text-[11px] text-muted-foreground">{p.email}</div></td>
                     <td className="p-3">{p.flight?.flight_number} · {p.flight?.source_code}→{p.flight?.destination_code}</td>
                     <td className="p-3">{p.seat_number}</td>
                     <td className="p-3"><StatusPill status={p.booking_status} /></td>
                     <td className="p-3 text-right">
                       <PaxActions status={p.booking_status}
-                        onCheckIn={() => handle(() => checkInFn({ data: { bookingRowId: p.id } }), "Checked in")}
-                        onBoard={() => handle(() => boardFn({ data: { bookingRowId: p.id } }), "Boarded")}
-                        onNoShow={() => handle(() => noShowFn({ data: { bookingRowId: p.id } }), "Marked no-show")}
+                        onCheckIn={() => handle(() => checkInFn({ data: { bookingRowId: p.booking_id } }), "Checked in")}
+                        onBoard={() => handle(() => boardFn({ data: { bookingRowId: p.booking_id } }), "Boarded")}
+                        onNoShow={() => handle(() => noShowFn({ data: { bookingRowId: p.booking_id } }), "Marked no-show")}
                         onCancel={() => {
                           const r = prompt("Cancellation reason?");
-                          if (r && r.length >= 2) handle(() => cancelFn({ data: { bookingRowId: p.id, reason: r } }), "Booking cancelled");
+                          if (r && r.length >= 2) handle(() => cancelFn({ data: { bookingRowId: p.booking_id, reason: r } }), "Booking cancelled");
                         }}
                       />
                     </td>
