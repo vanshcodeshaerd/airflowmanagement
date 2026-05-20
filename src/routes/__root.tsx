@@ -25,6 +25,14 @@ function RealtimeSync() {
       "passenger_notifications",
       "flight_gate_assignments",
       "flight_status_history",
+      "passenger",
+      "payment",
+      "baggage",
+      "check_in",
+      "flight_stops",
+      "aircraft_model",
+      "terminal",
+      "location",
     ];
     const channel = supabase.channel("admin-user-sync");
     for (const table of tables) {
