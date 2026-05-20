@@ -9,6 +9,7 @@ import {
   ensureGateForFlight,
   type FlightStatusRow,
 } from "@/lib/flight-status.functions";
+import { getFlightAircraftAndStops } from "@/lib/legacy.functions";
 import {
   computeLiveStatus,
   statusPalette,
