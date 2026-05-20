@@ -1,0 +1,12 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE public.flights;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.boarding_passes;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.bookings;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.passenger_notifications;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.flight_gate_assignments;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.flight_status_history;
+ALTER TABLE public.flights REPLICA IDENTITY FULL;
+ALTER TABLE public.boarding_passes REPLICA IDENTITY FULL;
+ALTER TABLE public.bookings REPLICA IDENTITY FULL;
+ALTER TABLE public.passenger_notifications REPLICA IDENTITY FULL;
+ALTER TABLE public.flight_gate_assignments REPLICA IDENTITY FULL;
+ALTER TABLE public.flight_status_history REPLICA IDENTITY FULL;
