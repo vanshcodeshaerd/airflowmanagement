@@ -21,12 +21,14 @@ import {
   Ticket,
   TrendingUp,
   User,
+  Receipt,
 } from "lucide-react";
 import { getAirportByCode } from "@/lib/airports.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { getDirectionsUrl } from "@/components/airports/utils";
 import type { Airport } from "@/components/airports/types";
 import { SupportModal } from "./SupportModal";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface Props {
   code: string;
@@ -103,6 +105,13 @@ export function AirportDashboard({ code }: Props) {
             AirFlow
           </Link>
           <div className="flex items-center gap-3">
+            <NotificationBell />
+            <Link
+              to="/refund"
+              className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-ui font-semibold text-accent hover:underline"
+            >
+              <Receipt className="w-4 h-4" /> Refund
+            </Link>
             <button
               aria-label="Profile"
               className="w-9 h-9 grid place-items-center bg-sky-soft text-accent-strong rounded-none"
@@ -290,8 +299,9 @@ export function AirportDashboard({ code }: Props) {
             href={airport.contact_phone ? `tel:${airport.contact_phone}` : undefined}
           />
           <QuickLink
-            icon={<Calendar className="w-5 h-5" />}
-            label="Facilities"
+            icon={<Receipt className="w-5 h-5" />}
+            label="Request Refund"
+            to="/refund"
           />
           <QuickLink
             icon={<Headphones className="w-5 h-5" />}
@@ -438,15 +448,25 @@ function QuickLink({
   href,
   external,
   onClick,
+  to,
 }: {
   icon: React.ReactNode;
   label: string;
   href?: string;
   external?: boolean;
   onClick?: () => void;
+  to?: string;
 }) {
   const cls =
     "flex items-center gap-2 bg-white border border-border px-4 py-3 text-primary hover:border-accent hover:text-accent-strong transition rounded-none";
+  if (to) {
+    return (
+      <Link to={to} className={cls}>
+        {icon}
+        <span className="font-ui font-semibold text-[12px]">{label}</span>
+      </Link>
+    );
+  }
   if (href) {
     return (
       <a
