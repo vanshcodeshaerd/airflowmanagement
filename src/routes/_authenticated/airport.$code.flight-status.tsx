@@ -72,7 +72,7 @@ function FlightStatusPage() {
     enabled: !!searchPayload,
   });
 
-  const flights = searchPayload ? findQuery.data?.flights ?? [] : listQuery.data?.flights ?? [];
+  const flights = searchPayload ? (findQuery.data?.flights ?? []) : (listQuery.data?.flights ?? []);
   const isLoading = searchPayload ? findQuery.isLoading : listQuery.isLoading;
 
   function submitSearch(e: React.FormEvent) {
@@ -102,9 +102,7 @@ function FlightStatusPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Flight Status — {airportCode}</h1>
-            <p className="text-sm text-muted-foreground">
-              Live tracking · updates every 30s
-            </p>
+            <p className="text-sm text-muted-foreground">Live tracking · updates every 30s</p>
           </div>
         </div>
       </header>
@@ -215,8 +213,7 @@ function FlightStatusCard({ flight, now }: { flight: FlightStatusRow; now: Date 
   const arr = new Date(flight.arrival_datetime);
   const fmtTime = (d: Date) =>
     d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-  const fmtDate = (d: Date) =>
-    d.toLocaleDateString([], { day: "2-digit", month: "short" });
+  const fmtDate = (d: Date) => d.toLocaleDateString([], { day: "2-digit", month: "short" });
 
   // Trigger on-demand gate assignment when we cross into the T-60 window
   const ensureFn = useServerFn(ensureGateForFlight);
@@ -232,7 +229,8 @@ function FlightStatusCard({ flight, now }: { flight: FlightStatusRow; now: Date 
   const effectiveGate = gateMutation.data?.gate ?? flight.gate_number;
   const effectiveTerminal = gateMutation.data?.terminal ?? flight.terminal;
   const hasAssignedGate = !!effectiveGate || !!effectiveTerminal;
-  const showGate = hasAssignedGate || live === "Security" || live === "Boarding" || live === "Departed";
+  const showGate =
+    hasAssignedGate || live === "Security" || live === "Boarding" || live === "Departed";
 
   return (
     <Card className="overflow-hidden">
@@ -277,21 +275,27 @@ function FlightStatusCard({ flight, now }: { flight: FlightStatusRow; now: Date 
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-          <Info icon={<Plane className="h-4 w-4" />} label="Aircraft" value={flight.aircraft_type} />
+          <Info
+            icon={<Plane className="h-4 w-4" />}
+            label="Aircraft"
+            value={flight.aircraft_type}
+          />
           <Info
             icon={<Clock className="h-4 w-4" />}
             label={live === "Departed" ? "Departed" : "In"}
-            value={live === "Departed" ? fmtTime(dep) : formatCountdown(flight.departure_datetime, now)}
+            value={
+              live === "Departed" ? fmtTime(dep) : formatCountdown(flight.departure_datetime, now)
+            }
           />
           <Info
             icon={<MapPin className="h-4 w-4" />}
             label="Terminal"
-            value={showGate ? effectiveTerminal ?? "TBD" : "—"}
+            value={showGate ? (effectiveTerminal ?? "TBD") : "—"}
           />
           <Info
             icon={<DoorOpen className="h-4 w-4" />}
             label="Gate"
-            value={showGate ? effectiveGate ?? "TBD" : "—"}
+            value={showGate ? (effectiveGate ?? "TBD") : "—"}
             highlight={live === "Boarding" && !!effectiveGate}
           />
         </div>
@@ -318,7 +322,8 @@ function FlightStatusCard({ flight, now }: { flight: FlightStatusRow; now: Date 
                       className={cn(
                         "h-3 w-3 rounded-full transition-colors",
                         s.reached ? p.dotClass : "bg-muted",
-                        s.current && "ring-2 ring-offset-1 ring-offset-background ring-foreground/40",
+                        s.current &&
+                          "ring-2 ring-offset-1 ring-offset-background ring-foreground/40",
                       )}
                     />
                     {i < steps.length - 1 && (
@@ -358,7 +363,11 @@ function AircraftAndStops({ flightNumber }: { flightNumber: string }) {
     queryKey: ["aircraft-stops", flightNumber],
     queryFn: () => fn({ data: { flight_number: flightNumber } }),
   });
-  const ac = data?.aircraft as { airline_name?: string; aircraft_type?: string; seating_capacity?: number } | null;
+  const ac = data?.aircraft as {
+    airline_name?: string;
+    aircraft_type?: string;
+    seating_capacity?: number;
+  } | null;
   const stops = data?.stops ?? [];
   if (!ac && stops.length === 0) return null;
   return (
@@ -367,14 +376,21 @@ function AircraftAndStops({ flightNumber }: { flightNumber: string }) {
         <div className="flex items-center gap-2">
           <Plane className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="font-semibold">{ac.airline_name}</span>
-          <span className="text-muted-foreground">· {ac.aircraft_type} · {ac.seating_capacity} seats</span>
+          <span className="text-muted-foreground">
+            · {ac.aircraft_type} · {ac.seating_capacity} seats
+          </span>
         </div>
       )}
       <div className="flex items-center gap-2">
         <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-        {stops.length === 0
-          ? <span className="font-semibold text-emerald-600 dark:text-emerald-400">Non-stop</span>
-          : <span>{stops.length} stop{stops.length > 1 ? "s" : ""}: {stops.map((s) => s.stop_location).join(" → ")}</span>}
+        {stops.length === 0 ? (
+          <span className="font-semibold text-emerald-600 dark:text-emerald-400">Non-stop</span>
+        ) : (
+          <span>
+            {stops.length} stop{stops.length > 1 ? "s" : ""}:{" "}
+            {stops.map((s) => s.stop_location).join(" → ")}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -393,18 +409,13 @@ function Info({
 }) {
   return (
     <div
-      className={cn(
-        "rounded-md border bg-card p-2.5",
-        highlight && "border-primary bg-primary/5",
-      )}
+      className={cn("rounded-md border bg-card p-2.5", highlight && "border-primary bg-primary/5")}
     >
       <div className="flex items-center gap-1 text-xs text-muted-foreground">
         {icon}
         {label}
       </div>
-      <div className={cn("font-semibold mt-0.5", highlight && "text-primary text-lg")}>
-        {value}
-      </div>
+      <div className={cn("font-semibold mt-0.5", highlight && "text-primary text-lg")}>{value}</div>
     </div>
   );
 }
