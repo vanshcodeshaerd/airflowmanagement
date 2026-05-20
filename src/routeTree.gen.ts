@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminAirportsRouteImport } from './routes/_admin.airports'
 import { Route as AuthenticatedDashboardAirportsRouteImport } from './routes/_authenticated/dashboard.airports'
 import { Route as AuthenticatedAirportCodeFlightsRouteImport } from './routes/_authenticated/airport.$code.flights'
 import { Route as AuthenticatedAirportCodeFlightStatusRouteImport } from './routes/_authenticated/airport.$code.flight-status'
@@ -27,10 +29,19 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAirportsRoute = AdminAirportsRouteImport.update({
+  id: '/airports',
+  path: '/airports',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AuthenticatedDashboardAirportsRoute =
   AuthenticatedDashboardAirportsRouteImport.update({
@@ -66,6 +77,7 @@ const AuthenticatedAirportCodeBoardingPassRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/airports': typeof AdminAirportsRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
   '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
   '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
@@ -75,6 +87,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/airports': typeof AdminAirportsRoute
   '/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
   '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
   '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
@@ -84,8 +97,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_admin': typeof AdminRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_admin/airports': typeof AdminAirportsRoute
   '/_authenticated/dashboard/airports': typeof AuthenticatedDashboardAirportsRoute
   '/_authenticated/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
   '/_authenticated/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
@@ -97,6 +112,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/airports'
     | '/dashboard/airports'
     | '/airport/$code/boarding-pass'
     | '/airport/$code/dashboard'
@@ -106,6 +122,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/airports'
     | '/dashboard/airports'
     | '/airport/$code/boarding-pass'
     | '/airport/$code/dashboard'
@@ -114,8 +131,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_admin'
     | '/_authenticated'
     | '/auth'
+    | '/_admin/airports'
     | '/_authenticated/dashboard/airports'
     | '/_authenticated/airport/$code/boarding-pass'
     | '/_authenticated/airport/$code/dashboard'
@@ -125,6 +144,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
 }
@@ -145,12 +165,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_admin': {
+      id: '/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_admin/airports': {
+      id: '/_admin/airports'
+      path: '/airports'
+      fullPath: '/airports'
+      preLoaderRoute: typeof AdminAirportsRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_authenticated/dashboard/airports': {
       id: '/_authenticated/dashboard/airports'
@@ -190,6 +224,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminAirportsRoute: typeof AdminAirportsRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAirportsRoute: AdminAirportsRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardAirportsRoute: typeof AuthenticatedDashboardAirportsRoute
   AuthenticatedAirportCodeBoardingPassRoute: typeof AuthenticatedAirportCodeBoardingPassRoute
@@ -215,9 +259,20 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
