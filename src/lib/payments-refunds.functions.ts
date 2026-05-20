@@ -423,6 +423,16 @@ export const adminApproveRefund = createServerFn({ method: "POST" })
         .eq("transaction_reference", refund.request_txn_id);
     }
 
+    // Finalize booking cancellation if this came from a self-cancel / refund request
+    await context.supabase
+      .from("bookings")
+      .update({
+        booking_status: "Cancelled",
+        cancelled_at: new Date().toISOString(),
+      })
+      .eq("booking_id", refund.booking_id)
+      .in("booking_status", ["Cancellation Requested", "Refund Requested"]);
+
     if (data.notify) {
       await context.supabase.from("passenger_notifications").insert({
         user_id: refund.user_id,
