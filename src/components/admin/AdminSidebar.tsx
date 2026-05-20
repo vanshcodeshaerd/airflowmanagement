@@ -4,16 +4,16 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const links = [
+const links: Array<{ to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; hint?: string; disabled?: boolean }> = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/airports", label: "Airport Management", icon: Building2 },
   { to: "/admin/airports", label: "Flight Management", icon: Plane, hint: "(via airport)" },
+  { to: "/admin/operations", label: "Operations", icon: Settings },
   { to: "#", label: "Passenger Mgmt", icon: Users, disabled: true },
   { to: "#", label: "Bookings", icon: Ticket, disabled: true },
   { to: "#", label: "Transactions", icon: CreditCard, disabled: true },
   { to: "#", label: "Boarding Passes", icon: Receipt, disabled: true },
   { to: "#", label: "Notifications", icon: Bell, disabled: true },
-  { to: "#", label: "Settings", icon: Settings, disabled: true },
 ];
 
 export function AdminSidebar() {

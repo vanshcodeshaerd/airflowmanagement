@@ -9,6 +9,7 @@ import {
   ensureGateForFlight,
   type FlightStatusRow,
 } from "@/lib/flight-status.functions";
+import { getFlightAircraftAndStops } from "@/lib/legacy.functions";
 import {
   computeLiveStatus,
   statusPalette,
@@ -294,6 +295,8 @@ function FlightStatusCard({ flight, now }: { flight: FlightStatusRow; now: Date 
           />
         </div>
 
+        <AircraftAndStops flightNumber={flight.flight_number} />
+
         {/* Timeline */}
         {live !== "Departed" && live !== "Cancelled" && (
           <div className="pt-2">
@@ -345,6 +348,34 @@ function FlightStatusCard({ flight, now }: { flight: FlightStatusRow; now: Date 
         )}
       </div>
     </Card>
+  );
+}
+
+function AircraftAndStops({ flightNumber }: { flightNumber: string }) {
+  const fn = useServerFn(getFlightAircraftAndStops);
+  const { data } = useQuery({
+    queryKey: ["aircraft-stops", flightNumber],
+    queryFn: () => fn({ data: { flight_number: flightNumber } }),
+  });
+  const ac = data?.aircraft as { airline_name?: string; aircraft_type?: string; seating_capacity?: number } | null;
+  const stops = data?.stops ?? [];
+  if (!ac && stops.length === 0) return null;
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 flex flex-wrap gap-x-6 gap-y-2 text-xs">
+      {ac && (
+        <div className="flex items-center gap-2">
+          <Plane className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="font-semibold">{ac.airline_name}</span>
+          <span className="text-muted-foreground">· {ac.aircraft_type} · {ac.seating_capacity} seats</span>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+        {stops.length === 0
+          ? <span className="font-semibold text-emerald-600 dark:text-emerald-400">Non-stop</span>
+          : <span>{stops.length} stop{stops.length > 1 ? "s" : ""}: {stops.map((s) => s.stop_location).join(" → ")}</span>}
+      </div>
+    </div>
   );
 }
 
