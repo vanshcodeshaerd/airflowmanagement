@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-import { loginSchema, type LoginValues } from "@/lib/auth/schemas";
+import { loginSchema, isAdminCredential, type LoginValues } from "@/lib/auth/schemas";
 import { supabase } from "@/integrations/supabase/client";
 import { FormErrorAlert } from "./FormErrorAlert";
 import { SocialAuthButtons } from "./SocialAuthButtons";
