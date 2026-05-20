@@ -49,7 +49,7 @@ export const listTodaysPassengers = createServerFn({ method: "POST" })
       .lte("departure_datetime", end.toISOString());
     const ids = (flights ?? []).map((f) => f.id);
     const { data: bookings } = await supabaseAdmin.from("bookings")
-      .select("id,booking_id,flight_id,passenger_name,seat_number,cabin_class,booking_status,user_id,email,passenger_phone")
+      .select("booking_id,flight_id,passenger_name,seat_number,cabin_class,booking_status,user_id,email,passenger_phone")
       .in("flight_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"])
       .order("created_at", { ascending: false });
     const fmap = new Map((flights ?? []).map((f) => [f.id, f]));
@@ -67,12 +67,13 @@ export const listFlightPassengers = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     const { data: flight } = await supabaseAdmin.from("flights").select("*").eq("id", data.flightId).maybeSingle();
     const { data: bookings } = await supabaseAdmin.from("bookings")
-      .select("id,booking_id,passenger_name,seat_number,cabin_class,booking_status,email,passenger_phone,passenger_age,user_id,total_amount")
+      .select("booking_id,passenger_name,seat_number,cabin_class,booking_status,email,passenger_phone,passenger_age,user_id,total_amount")
       .eq("flight_id", data.flightId).order("seat_number");
     return { flight, passengers: bookings ?? [] };
   });
 
-const bookingIdSchema = z.object({ bookingRowId: z.string().uuid() });
+const bookingIdSchema = z.object({ bookingRowId: z.string().min(1) });
+
 
 export const forceCheckIn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
