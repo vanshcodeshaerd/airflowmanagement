@@ -1,95 +1,84 @@
 
 ## Goal
 
-Ship a separate Admin Portal at `/admin/*` that shares one database with the user portal, so every admin change (delay, cancel, gate change, force check-in, etc.) shows up immediately on the passenger side. Built on Lovable Cloud (Postgres) today, with every DB call routed through a thin repository layer so a future Oracle backend is a one-file swap. Out of scope this turn (per your pick): visual gate grid, analytics dashboards, notification-center UI, audit-log viewer.
+Bring the live Postgres database in line with the original Oracle DDL/DML (12 source-of-truth tables) **without breaking the existing UI, routes, design, or admin portal**. Original rows (L101–L106, F101–F106, P1–P6, B1–B6, Pay1–Pay6, R1–R2, C1–C6, baggage, flight stops) must appear in the user-facing pages, and the codebase must reference the original names (LOCATION, FLIGHT, BOOKING, PASSENGER, PAYMENT, REFUND_INFO, CHECK_IN, BAGGAGE, FLIGHT_STOPS, GATE, TERMINAL, AIRCRAFT_MODEL).
 
-## What you'll see
+## Reality check before we start
 
-```text
-/admin
- ├── /dashboard              ← 2-card landing (Airport Mgmt / Passenger Mgmt) + live KPIs
- ├── /airports               ← airport directory with admin badges + "Manage" CTA
- ├── /airports/$code         ← date picker + flight ops table + "Add Flight"
- │    └── flight side-panel  ← Overview · Seats · Gate · Delay · Cancel · Passengers
- ├── /passengers             ← 3 tabs: All Users · Today's Flights · Boarding Tracker
- └── /passengers/flight/$id  ← full passenger manifest per flight
-```
+The current app already runs on Postgres tables `airports`, `flights`, `bookings`, etc., with RLS policies, triggers, `assign_gate_for_flight`, `admin_delay_flight`, `admin_cancel_flight`, `admin_change_gate`, realtime publications, and a generated `types.ts` that every server function imports. A literal rename of every table to Oracle UPPERCASE names would:
 
-Admin theme = darker navy (#001f3f) header bar + same fonts as user portal. All buttons stay square per the existing design.
+- invalidate every RLS policy, trigger, and SECURITY DEFINER function we just wrote,
+- regenerate `types.ts` and break every `.from("flights")` / `.from("bookings")` call across `src/lib/*.functions.ts` and components,
+- break the realtime channel and the admin RPCs that just started working.
 
-## Access control (the "both" answer you picked)
+So the plan threads the needle: **keep the working physical tables, add the missing original tables, seed the original DML, expose the Oracle names via SQL VIEWS, and add the missing columns (IATA_Code, Airport_Name, etc.) on existing tables.** The UI continues to read from the existing tables; the original names are available for any query the user wants to write against them.
 
-- Client unlocks the `/admin/*` UI when the signed-in email starts with `admin_` AND the seeded `admin_demo@airportms.com` account is used — keeps the spec's "special credentials" UX.
-- Every server function that mutates anything goes through a new `requireAdmin` middleware that calls `has_role(auth.uid(), 'admin')`. RLS on the existing tables already enforces the same; the middleware just fails fast with a clear 403 before touching the DB.
-- A new pathless layout `src/routes/_admin.tsx` redirects to `/dashboard` if the user lacks the admin role, so the UI can't be opened by typing the URL.
+If you'd rather do a hard rename (riskier, ~2–3 days of code churn, will regress admin features), say so and I'll redo the plan.
 
-## Database changes (Postgres, Oracle-shaped naming)
+## Phase 1 — Database migration (single SQL migration)
 
-One migration adds the five tables you kept. All use `gen_random_uuid()` PKs, `timestamptz`, and standard `created_at`. Soft-delete only — nothing is ever hard-deleted.
+1. **Add the 4 missing original tables** that don't exist today:
+   - `passenger` (Ticket_Number PK, name, age, nationality, contact_info, email, passport_id)
+   - `payment` (Payment_ID PK, Ticket_Number, amount, method, status, timestamp, booking_id, txn_ref)
+   - `baggage` (Tag_ID PK, Ticket_Number, weight, status, flight_number, created_at)
+   - `check_in` (Checkin_ID PK, Ticket_Number, flight_number, status, method, boarding_pass_issued, seat_confirmed)
+   - `flight_stops` (flight_number, stop_number, stop_location)
+   - `aircraft_model` (Model_ID PK, airline_name, seating_capacity, iata_airline_code, aircraft_type, seat counts, prices)
+   - `terminal` (Terminal_Number PK, name, capacity, location_id)
+   - `location` (Location_ID PK 'L101'…, city, state, country, iata_code, airport_name, lat, lng, totals)
+   - All with RLS: `anyone reads`, `admins manage`.
 
-- `admin_actions` — audit trail of every admin mutation (action_type, target_entity, target_id, previous_value, new_value, reason, admin_id, ip).
-- `passenger_notifications` — one row per affected booking on delay/cancel/gate-change; `is_read` flag, type enum, message text. Read by future bell UI; for now the row + a manual refresh on the passenger booking page surfaces it.
-- `refund_records` — one row per cancelled booking; amount, reason, status (Pending/Processing/Completed), processed_at.
-- `boarding_pass_updates` — log of every change applied to a boarding pass (gate_change / delay / cancellation).
-- A few new columns on existing tables:
-  - `flights.is_active boolean default true`, `flights.cancellation_reason text`, `flights.cancelled_at timestamptz`
-  - `bookings.cancellation_reason text`, `bookings.cancelled_at timestamptz`
-  - `boarding_passes.is_valid boolean default true`, `boarding_passes.invalidation_reason text`, `boarding_passes.is_updated boolean default false`, `boarding_passes.update_reason text`
+2. **Extend existing tables with original-shape columns** (ALTER ADD COLUMN, no drops):
+   - `airports`: add `location_id text` (back-fill L101–L106 mapped to BOM/DEL/BLR/MAA/HYD/CCU).
+   - `flights`: add `flight_number_original text`, `model_id text`, `origin_location_id text`, `destination_location_id text`, `is_visible_on_ui boolean default true`, `is_bookable boolean default true`.
+   - `gates`: add `max_aircraft_size text`, `terminal_number text`.
 
-Two new SECURITY DEFINER Postgres functions do the heavy lifting atomically:
+3. **Seed original DML** with idempotent `INSERT … ON CONFLICT DO NOTHING`:
+   - 6 locations L101–L106 (mapped to existing IATA codes via new `location_id` column on airports).
+   - 6 terminals T1–T6, 7 gates G1–G7, 5 aircraft models M1–M5.
+   - 6 flights F101–F106 inserted into both the new `flight` original-shape view-backing rows AND into the existing `flights` table so the existing UI lists them at AMD/BOM/etc.
+   - 6 passengers P1–P6, 6 bookings, 6 payments, 2 refunds, 6 baggage rows, 6 check-ins, 6 flight stops.
+   - Refunds reuse the existing `refund_records` table (the original `REFUND_INFO` is a near-perfect match — just add `refund_reason`/`refund_type` already present).
 
-- `admin_delay_flight(p_flight_id, p_delay_minutes, p_reason)` — shifts departure + arrival, updates boarding-pass times, inserts `flight_status_history`, `admin_actions`, `boarding_pass_updates`, and one `passenger_notifications` row per booking.
-- `admin_cancel_flight(p_flight_id, p_reason)` — sets flight to Cancelled, marks bookings Cancelled, inserts `refund_records` for each, flips boarding passes to `is_valid=false`, releases the gate assignment, logs everything, notifies all booked passengers.
+4. **Expose Oracle names via SQL VIEWS** so anyone querying `LOCATION`, `FLIGHT`, `BOOKING`, etc., gets the right data without breaking current code:
+   - `CREATE VIEW location AS SELECT … FROM airports …`
+   - `CREATE VIEW flight AS SELECT … FROM flights …`
+   - `CREATE VIEW booking AS SELECT … FROM bookings …`
+   - `CREATE VIEW passenger AS SELECT … FROM passenger` (real table)
+   - `CREATE VIEW payment AS SELECT … FROM payment`
+   - `CREATE VIEW refund_info AS SELECT … FROM refund_records`
+   - `CREATE VIEW check_in AS SELECT … FROM check_in`
+   - Views inherit RLS via `security_invoker = on`.
 
-RLS for the new tables: `admin` role full access; passengers can read their own `passenger_notifications` and `refund_records` only.
+## Phase 2 — Wire original data into the existing UI (no route or design changes)
 
-## Server functions (repository layer)
+Nothing in `src/routes/**`, `src/components/**`, or `src/styles.css` is renamed or restyled. We only:
 
-All admin DB access lives in three new `.functions.ts` files. Every handler runs `requireAdmin`. Each function is a one-liner over `supabaseAdmin` so swapping to Oracle later means rewriting only these files.
+- Extend `src/lib/flights.functions.ts` and `src/lib/airports.functions.ts` so the list/search queries include the seeded F101–F106 / L101–L106 rows (they will already appear once seeded, since the existing tables get the inserts — no code change needed beyond verifying the date filter doesn't hide April 2026 flights).
+- Add lightweight server fns under `src/lib/legacy.functions.ts` for the original-only entities so admin / user pages can read them when needed:
+  - `listOriginalPassengers`, `listOriginalBookings`, `listOriginalPayments`, `listOriginalRefunds`, `listOriginalBaggage`, `listOriginalCheckIns`, `listOriginalFlightStops`.
+- These are additive; existing booking/check-in flows for **new** users keep using the current `bookings` / `boarding_passes` tables.
 
-- `src/lib/admin-airports.functions.ts` — `listAdminAirports`, `getAirportOpsSummary` (today's flights count, gates in use, delayed count).
-- `src/lib/admin-flights.functions.ts` — `listAirportFlightsByDate`, `getFlightDetails`, `getFlightPassengers`, `createFlight`, `updateFlightFields`, `changeFlightStatus`, `changeFlightGate` (uses existing `assign_gate_for_flight` + collision check), `delayFlight` (calls `admin_delay_flight`), `cancelFlight` (calls `admin_cancel_flight`), `softDeleteFlight`.
-- `src/lib/admin-passengers.functions.ts` — `listAllUsers`, `listTodaysPassengers`, `listBoardingStatusByFlight`, `forceCheckIn`, `markBoarded`, `markNoShow`, `cancelBooking` (with refund row).
+## Phase 3 — Verification
 
-Booking lifecycle: `bookings.booking_status` extended to support `'Checked-In' | 'Boarded' | 'NoShow' | 'Cancelled'` in addition to `Confirmed`. No new `check_in_records` table this turn — status on the booking is enough for Phase 1 and avoids the bigger Oracle-shaped check-in schema you scoped out.
+- Migration runs cleanly; `supabase--read_query` confirms 6 rows in each original table.
+- `/airport/BOM/flights` (and AMD, DEL…) lists F101–F106 when the date filter is set to April 2026.
+- Admin portal still works: delay / cancel / gate change RPCs untouched.
+- Realtime channel still fires on `flights`, `bookings`, `boarding_passes`.
 
-## UI pages
+## Out of scope this turn (deliberate)
 
-All under a new `src/routes/_admin/` layout group:
+- Renaming physical tables to UPPERCASE singular (would regress the admin portal we just finished).
+- Rewriting every `.from("flights")` call in TypeScript to `.from("FLIGHT")`.
+- New UI pages for baggage / check-in / flight stops / payments listings — the data is there, but new pages can come in a follow-up turn so this change set stays reviewable.
+- Oracle sequences / triggers from the original Phase-4 spec — Postgres uses `gen_random_uuid()` / identity, which is functionally equivalent and already in place.
 
-1. **`_admin/dashboard.tsx`** — 2 cards (Airport Mgmt / Passenger Mgmt) with live KPIs pulled from one combined server fn; footer bar with bookings-today, revenue-today, cancelled-today, active-users.
-2. **`_admin/airports.tsx`** — reuses your existing `AirportCard` grid but renders admin badges (flights today, gates in use, active bookings) and a "Manage" CTA per card.
-3. **`_admin/airports.$code.tsx`** — top info panel, date picker (Yesterday / Today / Tomorrow), status counters, flight table with inline status / gate / terminal / delay editors, "Add New Flight" button that opens a modal wizard. Flight rows colour-coded as in the spec. Clicking a flight number opens the side-panel.
-4. **`_admin/_flight-panel`** — modal/side-panel with 5 tabs: Overview, Seat Availability, Gate Assignment (uses existing `gates` table + conflict check), Delay Management (preview of cascading time shift before apply), Cancel Flight (typed-CANCEL confirmation), Passengers (mini manifest with per-row actions).
-5. **`_admin/passengers.tsx`** — KPI bar + 3 tabs (All Users / Today's Flights / Boarding Tracker). Boarding tracker is one card per flight with a progress bar.
-6. **`_admin/passengers.flight.$flightId.tsx`** — full per-flight manifest with bulk + per-row actions.
+## One question before I write the migration
 
-All inline edits use optimistic updates and revalidate via `router.invalidate()` so passenger-side data refreshes in adjacent tabs after a few seconds.
+The original DML uses dates `2026-04-10 … 2026-04-15`. Today is **May 20, 2026**, so those flights are all in the past and won't appear on the user-side flight search (which filters to departures ≥24h in the future). Pick one:
 
-## Cascading update guarantees
+- **A.** Seed F101–F106 with the original April 2026 dates exactly as written. They will only be visible in admin views / history, not the booking flow.
+- **B.** Shift the seeded flight dates forward by ~30 days (keep flight numbers, route, gate, model, status) so F101–F106 appear in the live user flight search and can actually be booked.
 
-Every mutation that touches multiple tables runs inside a single SECURITY DEFINER Postgres function (delay, cancel, gate change) so partial failures can't leave the DB inconsistent. `admin_actions` and `passenger_notifications` rows are written inside the same function call.
+If you don't answer, I'll go with **B** so the original data is actually visible in the app, which matches the spec's "Display Original Data In UI" goal.
 
-## Validation rules enforced server-side
-
-- Flight number uniqueness on create.
-- Departure must be ≥24h in the future on create (matches existing booking visibility window).
-- Source ≠ destination.
-- Gate conflict check uses the existing 15-minute turnover logic from `assign_gate_for_flight`.
-- Cancel requires `confirm: "CANCEL"` field on the wire.
-
-## What's deliberately excluded this turn
-
-- Visual gate grid per terminal (Phase 2).
-- Analytics / reports module (Phase 2).
-- Passenger notification bell + toast UI (rows are written; UI later).
-- Audit-log viewer page (data is captured; viewer later).
-- Hard delete (we soft-delete only, always).
-
-## Risks / things to confirm during implementation
-
-- **Booking status enum widening** affects user-side booking lists; I'll audit `src/lib/flights.functions.ts` and the boarding-pass page so cancelled / boarded statuses render sensibly there.
-- The seeded admin account (`admin_demo@airportms.com`) already gets `role='admin'` via your `handle_new_user_role` trigger — no extra setup needed.
-- This is a large change set; if anything regresses on the passenger side I'd rather fix forward than try to ship Phase 2 on top.
-
-If this looks right I'll start with the migration, then the repository server fns, then the UI in the order listed above.
