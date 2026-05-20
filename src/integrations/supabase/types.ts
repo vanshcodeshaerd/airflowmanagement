@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      airlines: {
+        Row: {
+          code: string
+          created_at: string
+          logo_url: string | null
+          name: string
+          price_multiplier: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          logo_url?: string | null
+          name: string
+          price_multiplier?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          logo_url?: string | null
+          name?: string
+          price_multiplier?: number
+        }
+        Relationships: []
+      }
       airport_airlines: {
         Row: {
           airline_code: string
@@ -45,6 +69,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      airport_routes: {
+        Row: {
+          destination_code: string
+          distance_km: number
+          duration_minutes: number
+          id: string
+          source_code: string
+        }
+        Insert: {
+          destination_code: string
+          distance_km: number
+          duration_minutes: number
+          id?: string
+          source_code: string
+        }
+        Update: {
+          destination_code?: string
+          distance_km?: number
+          duration_minutes?: number
+          id?: string
+          source_code?: string
+        }
+        Relationships: []
       }
       airport_services: {
         Row: {
@@ -155,6 +203,190 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: []
+      }
+      boarding_passes: {
+        Row: {
+          boarding_group: string
+          boarding_time: string
+          booking_id: string
+          cabin_class: string
+          created_at: string
+          flight_id: string
+          gate_number: string | null
+          passenger_name: string
+          qr_data: string
+          seat_number: string
+          user_id: string
+        }
+        Insert: {
+          boarding_group: string
+          boarding_time: string
+          booking_id: string
+          cabin_class: string
+          created_at?: string
+          flight_id: string
+          gate_number?: string | null
+          passenger_name: string
+          qr_data: string
+          seat_number: string
+          user_id: string
+        }
+        Update: {
+          boarding_group?: string
+          boarding_time?: string
+          booking_id?: string
+          cabin_class?: string
+          created_at?: string
+          flight_id?: string
+          gate_number?: string | null
+          passenger_name?: string
+          qr_data?: string
+          seat_number?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boarding_passes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "boarding_passes_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          booking_id: string
+          booking_status: string
+          cabin_class: string
+          created_at: string
+          email: string
+          flight_id: string
+          passenger_age: number
+          passenger_name: string
+          passenger_passport_id: string
+          passenger_phone: string
+          seat_number: string
+          total_amount: number
+          user_id: string
+        }
+        Insert: {
+          booking_id: string
+          booking_status?: string
+          cabin_class: string
+          created_at?: string
+          email: string
+          flight_id: string
+          passenger_age: number
+          passenger_name: string
+          passenger_passport_id: string
+          passenger_phone: string
+          seat_number: string
+          total_amount: number
+          user_id: string
+        }
+        Update: {
+          booking_id?: string
+          booking_status?: string
+          cabin_class?: string
+          created_at?: string
+          email?: string
+          flight_id?: string
+          passenger_age?: number
+          passenger_name?: string
+          passenger_passport_id?: string
+          passenger_phone?: string
+          seat_number?: string
+          total_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flights: {
+        Row: {
+          aircraft_type: string
+          airline_code: string
+          arrival_datetime: string
+          business_price: number
+          created_at: string
+          departure_datetime: string
+          destination_code: string
+          duration_minutes: number
+          economy_price: number
+          first_class_price: number
+          flight_number: string
+          flight_status: string
+          gate_number: string | null
+          id: string
+          is_visible_on_ui: boolean
+          number_of_stops: number
+          premium_economy_price: number
+          source_code: string
+        }
+        Insert: {
+          aircraft_type: string
+          airline_code: string
+          arrival_datetime: string
+          business_price: number
+          created_at?: string
+          departure_datetime: string
+          destination_code: string
+          duration_minutes: number
+          economy_price: number
+          first_class_price: number
+          flight_number: string
+          flight_status?: string
+          gate_number?: string | null
+          id?: string
+          is_visible_on_ui?: boolean
+          number_of_stops?: number
+          premium_economy_price: number
+          source_code: string
+        }
+        Update: {
+          aircraft_type?: string
+          airline_code?: string
+          arrival_datetime?: string
+          business_price?: number
+          created_at?: string
+          departure_datetime?: string
+          destination_code?: string
+          duration_minutes?: number
+          economy_price?: number
+          first_class_price?: number
+          flight_number?: string
+          flight_status?: string
+          gate_number?: string | null
+          id?: string
+          is_visible_on_ui?: boolean
+          number_of_stops?: number
+          premium_economy_price?: number
+          source_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flights_airline_code_fkey"
+            columns: ["airline_code"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       profiles: {
         Row: {
