@@ -488,6 +488,13 @@ export const adminRejectRefund = createServerFn({ method: "POST" })
       })
       .eq("id", data.refund_id);
 
+    // Revert booking status back to Confirmed if it was awaiting this decision
+    await context.supabase
+      .from("bookings")
+      .update({ booking_status: "Confirmed", refund_ref_id: null })
+      .eq("booking_id", refund.booking_id)
+      .in("booking_status", ["Cancellation Requested", "Refund Requested"]);
+
     if (data.notify) {
       await context.supabase.from("passenger_notifications").insert({
         user_id: refund.user_id,
