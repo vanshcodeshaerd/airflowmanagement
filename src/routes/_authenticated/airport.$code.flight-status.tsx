@@ -231,7 +231,8 @@ function FlightStatusCard({ flight, now }: { flight: FlightStatusRow; now: Date 
 
   const effectiveGate = gateMutation.data?.gate ?? flight.gate_number;
   const effectiveTerminal = gateMutation.data?.terminal ?? flight.terminal;
-  const showGate = live === "Security" || live === "Boarding" || live === "Departed";
+  const hasAssignedGate = !!effectiveGate || !!effectiveTerminal;
+  const showGate = hasAssignedGate || live === "Security" || live === "Boarding" || live === "Departed";
 
   return (
     <Card className="overflow-hidden">
