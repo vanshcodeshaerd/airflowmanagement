@@ -6,6 +6,8 @@ import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { loginSchema, isAdminCredential, type LoginValues } from "@/lib/auth/schemas";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { ensureAdminRoleForCredential } from "@/lib/admin-auth.functions";
 import { FormErrorAlert } from "./FormErrorAlert";
 import { SocialAuthButtons } from "./SocialAuthButtons";
 
@@ -19,6 +21,7 @@ export function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
   const [showPwd, setShowPwd] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const ensureAdminRole = useServerFn(ensureAdminRoleForCredential);
 
   const {
     register,
@@ -37,6 +40,15 @@ export function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
       return;
     }
     const isAdmin = isAdminCredential(values.email, values.password);
+    if (isAdmin) {
+      try {
+        await ensureAdminRole({ data: { email: values.email, password: values.password } });
+      } catch (err) {
+        await supabase.auth.signOut();
+        setSubmitError(err instanceof Error ? err.message : "Admin verification failed.");
+        return;
+      }
+    }
     localStorage.setItem("userRole", isAdmin ? "ADMIN" : "USER");
     if (isAdmin) localStorage.setItem("adminVerified", "true");
     else localStorage.removeItem("adminVerified");
