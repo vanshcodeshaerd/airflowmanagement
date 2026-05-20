@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Plane, Users, Receipt, CreditCard, Ticket, Bell, Settings, LogOut, Building2,
+  LayoutDashboard, Plane, Users, Receipt, CreditCard, Ticket, Bell, Settings, LogOut, Building2, IndianRupee,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,6 +9,7 @@ const links: Array<{ to: string; label: string; icon: typeof LayoutDashboard; ex
   { to: "/admin/airports", label: "Airport Management", icon: Building2 },
   { to: "/admin/airports", label: "Flight Management", icon: Plane, hint: "(via airport)" },
   { to: "/admin/operations", label: "Operations", icon: Settings },
+  { to: "/admin/refunds", label: "Refunds", icon: IndianRupee },
   { to: "#", label: "Passenger Mgmt", icon: Users, disabled: true },
   { to: "#", label: "Bookings", icon: Ticket, disabled: true },
   { to: "#", label: "Transactions", icon: CreditCard, disabled: true },

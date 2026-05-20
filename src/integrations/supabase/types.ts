@@ -455,6 +455,7 @@ export type Database = {
           passenger_name: string
           passenger_passport_id: string
           passenger_phone: string
+          refund_ref_id: string | null
           seat_number: string
           total_amount: number
           user_id: string
@@ -472,6 +473,7 @@ export type Database = {
           passenger_name: string
           passenger_passport_id: string
           passenger_phone: string
+          refund_ref_id?: string | null
           seat_number: string
           total_amount: number
           user_id: string
@@ -489,6 +491,7 @@ export type Database = {
           passenger_name?: string
           passenger_passport_id?: string
           passenger_phone?: string
+          refund_ref_id?: string | null
           seat_number?: string
           total_amount?: number
           user_id?: string
@@ -924,35 +927,47 @@ export type Database = {
         Row: {
           amount: number
           booking_id: string | null
+          gateway_upi_id: string | null
           payment_id: string
           payment_method: string
           payment_status: string
           payment_timestamp: string
+          remarks: string | null
           ticket_number: string
           transaction_reference: string | null
+          transaction_status: string | null
           updated_at: string | null
+          user_upi_id: string | null
         }
         Insert: {
           amount: number
           booking_id?: string | null
+          gateway_upi_id?: string | null
           payment_id: string
           payment_method: string
           payment_status: string
           payment_timestamp?: string
+          remarks?: string | null
           ticket_number: string
           transaction_reference?: string | null
+          transaction_status?: string | null
           updated_at?: string | null
+          user_upi_id?: string | null
         }
         Update: {
           amount?: number
           booking_id?: string | null
+          gateway_upi_id?: string | null
           payment_id?: string
           payment_method?: string
           payment_status?: string
           payment_timestamp?: string
+          remarks?: string | null
           ticket_number?: string
           transaction_reference?: string | null
+          transaction_status?: string | null
           updated_at?: string | null
+          user_upi_id?: string | null
         }
         Relationships: [
           {
@@ -987,38 +1002,83 @@ export type Database = {
       }
       refund_records: {
         Row: {
+          admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
           booking_id: string
+          flight_id: string | null
+          flight_number: string | null
           id: string
           initiated_at: string
           initiated_by: string | null
+          is_active: boolean | null
+          is_auto_refund: boolean | null
           processed_at: string | null
           refund_amount: number
           refund_reason: string | null
+          refund_request_id: string | null
+          refund_to_upi: string | null
           refund_type: string
+          rejected_at: string | null
+          rejection_reason: string | null
+          request_booking_id: string | null
+          request_email: string | null
+          request_txn_id: string | null
+          requested_by: string | null
           status: string
           user_id: string
         }
         Insert: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           booking_id: string
+          flight_id?: string | null
+          flight_number?: string | null
           id?: string
           initiated_at?: string
           initiated_by?: string | null
+          is_active?: boolean | null
+          is_auto_refund?: boolean | null
           processed_at?: string | null
           refund_amount: number
           refund_reason?: string | null
+          refund_request_id?: string | null
+          refund_to_upi?: string | null
           refund_type?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          request_booking_id?: string | null
+          request_email?: string | null
+          request_txn_id?: string | null
+          requested_by?: string | null
           status?: string
           user_id: string
         }
         Update: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           booking_id?: string
+          flight_id?: string | null
+          flight_number?: string | null
           id?: string
           initiated_at?: string
           initiated_by?: string | null
+          is_active?: boolean | null
+          is_auto_refund?: boolean | null
           processed_at?: string | null
           refund_amount?: number
           refund_reason?: string | null
+          refund_request_id?: string | null
+          refund_to_upi?: string | null
           refund_type?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          request_booking_id?: string | null
+          request_email?: string | null
+          request_txn_id?: string | null
+          requested_by?: string | null
           status?: string
           user_id?: string
         }
