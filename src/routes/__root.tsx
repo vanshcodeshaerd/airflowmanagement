@@ -152,6 +152,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <RealtimeSync />
       <Outlet />
       <Toaster />
     </QueryClientProvider>
