@@ -146,10 +146,9 @@ export const submitRefundRequest = createServerFn({ method: "POST" })
       .select("flight_status, flight_number")
       .eq("id", booking.flight_id)
       .maybeSingle();
-    const eligible =
-      flight && ["Cancelled", "Delayed"].includes(String(flight.flight_status));
-    if (!eligible)
-      throw new Error("Refunds are only allowed for cancelled or delayed flights");
+    // Note: eligibility is decided by the admin. Any valid booking+txn pair
+    // can submit a refund request; it stays Pending until an admin approves
+    // or rejects it from the Refund Management portal.
 
     const { data: dup } = await supabase
       .from("refund_records")
