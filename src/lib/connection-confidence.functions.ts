@@ -21,6 +21,9 @@ const OutboundSchema = z.object({
   final_boarding_call: z.string().min(1).max(40),
   airport: z.string().min(1).max(80),
   terminal_layout: z.string().min(1).max(200),
+  gate_pair_distance_m: z.number().int().min(0).max(5000).default(500),
+  same_terminal: z.boolean().default(true),
+  terminal_change_required: z.boolean().default(false),
 });
 
 const ConditionsSchema = z.object({
