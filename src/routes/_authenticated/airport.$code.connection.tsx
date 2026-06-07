@@ -74,12 +74,16 @@ function ConnectionConfidencePage() {
   const getProfile = useServerFn(getTravelProfile);
   const saveProfile = useServerFn(saveTravelProfile);
   const fetchLive = useServerFn(fetchLiveFlight);
+  const recordSpeed = useServerFn(recordWalkingSpeedSample);
 
   const [input, setInput] = useState<ConnectionInput>(DEFAULTS);
   const [auto, setAuto] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [alertsOn, setAlertsOn] = useState(false);
   const [liveFlightNumber, setLiveFlightNumber] = useState("");
+  const [walkStart, setWalkStart] = useState<number | null>(null);
+  const [walkElapsed, setWalkElapsed] = useState(0);
+  const [walkDistance, setWalkDistance] = useState<number>(500);
   const lastAlertedAt = useRef<number>(0);
 
   // Load saved profile on mount
