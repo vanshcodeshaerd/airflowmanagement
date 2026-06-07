@@ -24,6 +24,7 @@ import { Route as AuthenticatedDashboardAirportsRouteImport } from './routes/_au
 import { Route as AuthenticatedAirportCodeFlightsRouteImport } from './routes/_authenticated/airport.$code.flights'
 import { Route as AuthenticatedAirportCodeFlightStatusRouteImport } from './routes/_authenticated/airport.$code.flight-status'
 import { Route as AuthenticatedAirportCodeDashboardRouteImport } from './routes/_authenticated/airport.$code.dashboard'
+import { Route as AuthenticatedAirportCodeConnectionRouteImport } from './routes/_authenticated/airport.$code.connection'
 import { Route as AuthenticatedAirportCodeBoardingPassRouteImport } from './routes/_authenticated/airport.$code.boarding-pass'
 
 const AuthRoute = AuthRouteImport.update({
@@ -104,6 +105,12 @@ const AuthenticatedAirportCodeDashboardRoute =
     path: '/airport/$code/dashboard',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAirportCodeConnectionRoute =
+  AuthenticatedAirportCodeConnectionRouteImport.update({
+    id: '/airport/$code/connection',
+    path: '/airport/$code/connection',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAirportCodeBoardingPassRoute =
   AuthenticatedAirportCodeBoardingPassRouteImport.update({
     id: '/airport/$code/boarding-pass',
@@ -124,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/admin/airports/$code': typeof AdminAirportsCodeRoute
   '/admin/airports/': typeof AdminAirportsIndexRoute
   '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
+  '/airport/$code/connection': typeof AuthenticatedAirportCodeConnectionRoute
   '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
   '/airport/$code/flight-status': typeof AuthenticatedAirportCodeFlightStatusRoute
   '/airport/$code/flights': typeof AuthenticatedAirportCodeFlightsRoute
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
   '/admin/airports/$code': typeof AdminAirportsCodeRoute
   '/admin/airports': typeof AdminAirportsIndexRoute
   '/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
+  '/airport/$code/connection': typeof AuthenticatedAirportCodeConnectionRoute
   '/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
   '/airport/$code/flight-status': typeof AuthenticatedAirportCodeFlightStatusRoute
   '/airport/$code/flights': typeof AuthenticatedAirportCodeFlightsRoute
@@ -158,6 +167,7 @@ export interface FileRoutesById {
   '/admin/airports/$code': typeof AdminAirportsCodeRoute
   '/admin/airports/': typeof AdminAirportsIndexRoute
   '/_authenticated/airport/$code/boarding-pass': typeof AuthenticatedAirportCodeBoardingPassRoute
+  '/_authenticated/airport/$code/connection': typeof AuthenticatedAirportCodeConnectionRoute
   '/_authenticated/airport/$code/dashboard': typeof AuthenticatedAirportCodeDashboardRoute
   '/_authenticated/airport/$code/flight-status': typeof AuthenticatedAirportCodeFlightStatusRoute
   '/_authenticated/airport/$code/flights': typeof AuthenticatedAirportCodeFlightsRoute
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/admin/airports/$code'
     | '/admin/airports/'
     | '/airport/$code/boarding-pass'
+    | '/airport/$code/connection'
     | '/airport/$code/dashboard'
     | '/airport/$code/flight-status'
     | '/airport/$code/flights'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/admin/airports/$code'
     | '/admin/airports'
     | '/airport/$code/boarding-pass'
+    | '/airport/$code/connection'
     | '/airport/$code/dashboard'
     | '/airport/$code/flight-status'
     | '/airport/$code/flights'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
     | '/admin/airports/$code'
     | '/admin/airports/'
     | '/_authenticated/airport/$code/boarding-pass'
+    | '/_authenticated/airport/$code/connection'
     | '/_authenticated/airport/$code/dashboard'
     | '/_authenticated/airport/$code/flight-status'
     | '/_authenticated/airport/$code/flights'
@@ -329,6 +342,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAirportCodeDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/airport/$code/connection': {
+      id: '/_authenticated/airport/$code/connection'
+      path: '/airport/$code/connection'
+      fullPath: '/airport/$code/connection'
+      preLoaderRoute: typeof AuthenticatedAirportCodeConnectionRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/airport/$code/boarding-pass': {
       id: '/_authenticated/airport/$code/boarding-pass'
       path: '/airport/$code/boarding-pass'
@@ -343,6 +363,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRefundRoute: typeof AuthenticatedRefundRoute
   AuthenticatedDashboardAirportsRoute: typeof AuthenticatedDashboardAirportsRoute
   AuthenticatedAirportCodeBoardingPassRoute: typeof AuthenticatedAirportCodeBoardingPassRoute
+  AuthenticatedAirportCodeConnectionRoute: typeof AuthenticatedAirportCodeConnectionRoute
   AuthenticatedAirportCodeDashboardRoute: typeof AuthenticatedAirportCodeDashboardRoute
   AuthenticatedAirportCodeFlightStatusRoute: typeof AuthenticatedAirportCodeFlightStatusRoute
   AuthenticatedAirportCodeFlightsRoute: typeof AuthenticatedAirportCodeFlightsRoute
@@ -353,6 +374,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardAirportsRoute: AuthenticatedDashboardAirportsRoute,
   AuthenticatedAirportCodeBoardingPassRoute:
     AuthenticatedAirportCodeBoardingPassRoute,
+  AuthenticatedAirportCodeConnectionRoute:
+    AuthenticatedAirportCodeConnectionRoute,
   AuthenticatedAirportCodeDashboardRoute:
     AuthenticatedAirportCodeDashboardRoute,
   AuthenticatedAirportCodeFlightStatusRoute:
@@ -403,13 +426,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
