@@ -662,6 +662,24 @@ function ConnectionConfidencePage() {
                 <BellOff className="w-3.5 h-3.5 inline" />
               )}
             </button>
+            <button
+              onClick={togglePush}
+              className={`px-3 py-2.5 text-[11px] font-ui font-bold uppercase tracking-wider border ${
+                pushOn ? "bg-primary text-white border-primary" : "bg-white text-primary border-border"
+              }`}
+              title="Background push (works with tab closed)"
+            >
+              {pushOn ? "Push on" : "Push off"}
+            </button>
+            {pushOn && (
+              <button
+                onClick={sendTestPush}
+                className="px-3 py-2.5 text-[11px] font-ui font-bold uppercase tracking-wider border bg-white text-primary border-border"
+                title="Send a test push"
+              >
+                Test
+              </button>
+            )}
           </div>
         </section>
 
