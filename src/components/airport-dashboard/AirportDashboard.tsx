@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
+  Brain,
   Building,
   Calendar,
   Check,
