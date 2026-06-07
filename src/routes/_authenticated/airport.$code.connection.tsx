@@ -26,6 +26,8 @@ import {
   saveTravelProfile,
   type TravelProfile,
 } from "@/lib/travel-profile.functions";
+import { fetchLiveFlight } from "@/lib/aerodatabox.functions";
+import { Plane } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/airport/$code/connection")({
   component: ConnectionConfidencePage,
@@ -70,11 +72,13 @@ function ConnectionConfidencePage() {
   const fn = useServerFn(predictConnectionConfidence);
   const getProfile = useServerFn(getTravelProfile);
   const saveProfile = useServerFn(saveTravelProfile);
+  const fetchLive = useServerFn(fetchLiveFlight);
 
   const [input, setInput] = useState<ConnectionInput>(DEFAULTS);
   const [auto, setAuto] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [alertsOn, setAlertsOn] = useState(false);
+  const [liveFlightNumber, setLiveFlightNumber] = useState("");
   const lastAlertedAt = useRef<number>(0);
 
   // Load saved profile on mount
