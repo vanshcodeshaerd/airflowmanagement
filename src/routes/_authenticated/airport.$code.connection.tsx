@@ -1,14 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Brain, Clock, RefreshCw, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Brain,
+  Clock,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  Bell,
+  BellOff,
+  Save,
+} from "lucide-react";
+import { toast } from "sonner";
 import {
   predictConnectionConfidence,
   type ConnectionInput,
   type ConnectionResult,
 } from "@/lib/connection-confidence.functions";
+import {
+  getTravelProfile,
+  saveTravelProfile,
+  type TravelProfile,
+} from "@/lib/travel-profile.functions";
 
 export const Route = createFileRoute("/_authenticated/airport/$code/connection")({
   component: ConnectionConfidencePage,
@@ -33,6 +50,9 @@ const DEFAULTS: ConnectionInput = {
     final_boarding_call: "15:40 UTC",
     airport: "Dubai International",
     terminal_layout: "Terminal 3, concourse distance: 650 meters",
+    gate_pair_distance_m: 650,
+    same_terminal: false,
+    terminal_change_required: true,
   },
   airport_conditions: {
     security_queue_wait_min: 8,
@@ -43,12 +63,37 @@ const DEFAULTS: ConnectionInput = {
   },
 };
 
+const ALERT_THRESHOLD = 70;
+
 function ConnectionConfidencePage() {
   const { code } = Route.useParams();
   const fn = useServerFn(predictConnectionConfidence);
+  const getProfile = useServerFn(getTravelProfile);
+  const saveProfile = useServerFn(saveTravelProfile);
+
   const [input, setInput] = useState<ConnectionInput>(DEFAULTS);
   const [auto, setAuto] = useState(false);
   const [countdown, setCountdown] = useState(60);
+  const [alertsOn, setAlertsOn] = useState(false);
+  const lastAlertedAt = useRef<number>(0);
+
+  // Load saved profile on mount
+  const profileQuery = useQuery({
+    queryKey: ["travel-profile"],
+    queryFn: () => getProfile({}),
+  });
+
+  useEffect(() => {
+    const p = profileQuery.data as TravelProfile | null | undefined;
+    if (!p) return;
+    setInput((prev) => ({ ...prev, passenger_profile: p }));
+  }, [profileQuery.data]);
+
+  const saveMutation = useMutation({
+    mutationFn: () => saveProfile({ data: input.passenger_profile }),
+    onSuccess: () => toast.success("Travel profile saved"),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const mutation = useMutation({
     mutationFn: (data: ConnectionInput) => fn({ data }),
@@ -56,7 +101,7 @@ function ConnectionConfidencePage() {
 
   const result: ConnectionResult | undefined = mutation.data;
 
-  // Auto-refresh every 60s
+  // Auto-refresh
   useEffect(() => {
     if (!auto) return;
     setCountdown(60);
@@ -73,6 +118,41 @@ function ConnectionConfidencePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auto, input]);
 
+  // Push alert when score drops below threshold
+  useEffect(() => {
+    if (!result || !alertsOn) return;
+    if (result.confidence_score >= ALERT_THRESHOLD) return;
+    const now = Date.now();
+    if (now - lastAlertedAt.current < 120_000) return; // throttle 2 min
+    lastAlertedAt.current = now;
+    const title = `⚠️ Connection at risk: ${result.confidence_score}%`;
+    const body = result.reasoning;
+    toast.warning(title, { description: body, duration: 10_000 });
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      try {
+        new Notification(title, { body });
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [result, alertsOn]);
+
+  const enableAlerts = async () => {
+    if (typeof Notification === "undefined") {
+      toast.error("Notifications not supported in this browser");
+      return;
+    }
+    if (Notification.permission === "default") {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") {
+        toast.error("Permission denied");
+        return;
+      }
+    }
+    setAlertsOn(true);
+    toast.success(`Alerts on — you'll be notified below ${ALERT_THRESHOLD}%`);
+  };
+
   const riskColor = useMemo(() => {
     if (!result) return "hsl(var(--muted-foreground))";
     if (result.confidence_score >= 80) return "#16a34a";
@@ -80,6 +160,15 @@ function ConnectionConfidencePage() {
     if (result.confidence_score >= 40) return "#f97316";
     return "#dc2626";
   }, [result]);
+
+  const updatePassenger = (patch: Partial<ConnectionInput["passenger_profile"]>) =>
+    setInput((s) => ({ ...s, passenger_profile: { ...s.passenger_profile, ...patch } }));
+  const updateOutbound = (patch: Partial<ConnectionInput["outbound_flight"]>) =>
+    setInput((s) => ({ ...s, outbound_flight: { ...s.outbound_flight, ...patch } }));
+  const updateInbound = (patch: Partial<ConnectionInput["inbound_flight"]>) =>
+    setInput((s) => ({ ...s, inbound_flight: { ...s.inbound_flight, ...patch } }));
+  const updateConditions = (patch: Partial<ConnectionInput["airport_conditions"]>) =>
+    setInput((s) => ({ ...s, airport_conditions: { ...s.airport_conditions, ...patch } }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,178 +192,218 @@ function ConnectionConfidencePage() {
         {/* LEFT: Inputs */}
         <section className="lg:col-span-2 bg-white border border-border p-5">
           <div className="mb-4">
-            <h1 className="font-display font-extrabold text-2xl text-primary">
-              Will I Make It?
-            </h1>
+            <h1 className="font-display font-extrabold text-2xl text-primary">Will I Make It?</h1>
             <p className="text-[13px] text-muted-foreground font-sans mt-1">
-              Real-time connection confidence score powered by AI. Adjust your trip details below.
+              Real-time connection confidence powered by AI. Saves your walking speed and profile
+              across visits.
             </p>
           </div>
 
-          <div className="space-y-4 text-[13px]">
+          {/* Passenger profile */}
+          <SectionHeader>You</SectionHeader>
+          <div className="grid grid-cols-2 gap-3 text-[13px]">
+            <Field label="Age group">
+              <select
+                value={input.passenger_profile.age_group}
+                onChange={(e) => updatePassenger({ age_group: e.target.value })}
+                className="w-full border border-border px-3 py-2"
+              >
+                <option value="under-18">Under 18</option>
+                <option value="18-29">18–29</option>
+                <option value="30-40">30–40</option>
+                <option value="41-55">41–55</option>
+                <option value="56-70">56–70</option>
+                <option value="70+">70+</option>
+              </select>
+            </Field>
+            <Field label="Sprint capability">
+              <select
+                value={input.passenger_profile.sprint_capable}
+                onChange={(e) =>
+                  updatePassenger({
+                    sprint_capable: e.target.value as TravelProfile["sprint_capable"],
+                  })
+                }
+                className="w-full border border-border px-3 py-2"
+              >
+                <option value="low">Low</option>
+                <option value="moderate">Moderate</option>
+                <option value="high">High</option>
+              </select>
+            </Field>
+            <Field label="Walking speed (km/h)">
+              <input
+                type="number"
+                step={0.1}
+                min={1}
+                max={10}
+                value={input.passenger_profile.walking_speed_kmh}
+                onChange={(e) =>
+                  updatePassenger({ walking_speed_kmh: Number(e.target.value) || 4.5 })
+                }
+                className="w-full border border-border px-3 py-2 font-mono"
+              />
+            </Field>
+            <Field label="Mobility">
+              <select
+                value={input.passenger_profile.mobility}
+                onChange={(e) =>
+                  updatePassenger({ mobility: e.target.value as TravelProfile["mobility"] })
+                }
+                className="w-full border border-border px-3 py-2"
+              >
+                <option value="standard">Standard</option>
+                <option value="limited">Limited</option>
+                <option value="wheelchair">Wheelchair</option>
+              </select>
+            </Field>
+            <Field label="Luggage">
+              <select
+                value={input.passenger_profile.luggage}
+                onChange={(e) =>
+                  updatePassenger({ luggage: e.target.value as TravelProfile["luggage"] })
+                }
+                className="w-full border border-border px-3 py-2"
+              >
+                <option value="carry_on_only">Carry-on only</option>
+                <option value="checked">Checked</option>
+                <option value="both">Both</option>
+              </select>
+            </Field>
+            <button
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+              className="self-end h-[38px] border border-primary text-primary hover:bg-primary hover:text-white text-[11px] font-ui font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              {saveMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              Save profile
+            </button>
+          </div>
+
+          {/* Flights */}
+          <SectionHeader>Flights</SectionHeader>
+          <div className="grid grid-cols-2 gap-3 text-[13px]">
             <Field label="Inbound delay (min)">
               <input
                 type="number"
                 min={0}
                 value={input.inbound_flight.current_live_delay_min}
                 onChange={(e) =>
-                  setInput({
-                    ...input,
-                    inbound_flight: {
-                      ...input.inbound_flight,
-                      current_live_delay_min: Number(e.target.value) || 0,
-                    },
-                  })
+                  updateInbound({ current_live_delay_min: Number(e.target.value) || 0 })
                 }
                 className="w-full border border-border px-3 py-2 font-mono"
               />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Inbound gate">
-                <input
-                  value={input.inbound_flight.gate_arrival}
-                  onChange={(e) =>
-                    setInput({
-                      ...input,
-                      inbound_flight: { ...input.inbound_flight, gate_arrival: e.target.value },
-                    })
-                  }
-                  className="w-full border border-border px-3 py-2 font-mono"
-                />
-              </Field>
-              <Field label="Outbound gate">
-                <input
-                  value={input.outbound_flight.gate}
-                  onChange={(e) =>
-                    setInput({
-                      ...input,
-                      outbound_flight: { ...input.outbound_flight, gate: e.target.value },
-                    })
-                  }
-                  className="w-full border border-border px-3 py-2 font-mono"
-                />
-              </Field>
-            </div>
+            <Field label="Inbound gate">
+              <input
+                value={input.inbound_flight.gate_arrival}
+                onChange={(e) => updateInbound({ gate_arrival: e.target.value })}
+                className="w-full border border-border px-3 py-2 font-mono"
+              />
+            </Field>
+            <Field label="Outbound gate">
+              <input
+                value={input.outbound_flight.gate}
+                onChange={(e) => updateOutbound({ gate: e.target.value })}
+                className="w-full border border-border px-3 py-2 font-mono"
+              />
+            </Field>
+            <Field label="Gate distance (m)">
+              <input
+                type="number"
+                min={0}
+                max={5000}
+                value={input.outbound_flight.gate_pair_distance_m}
+                onChange={(e) =>
+                  updateOutbound({ gate_pair_distance_m: Number(e.target.value) || 0 })
+                }
+                className="w-full border border-border px-3 py-2 font-mono"
+              />
+            </Field>
             <Field label="Terminal layout">
               <input
                 value={input.outbound_flight.terminal_layout}
+                onChange={(e) => updateOutbound({ terminal_layout: e.target.value })}
+                className="w-full border border-border px-3 py-2 col-span-2"
+              />
+            </Field>
+            <div className="col-span-2 flex items-center gap-4 -mt-1">
+              <label className="flex items-center gap-2 text-[12px] font-ui">
+                <input
+                  type="checkbox"
+                  checked={input.outbound_flight.same_terminal}
+                  onChange={(e) =>
+                    updateOutbound({
+                      same_terminal: e.target.checked,
+                      terminal_change_required: !e.target.checked,
+                    })
+                  }
+                />
+                Same terminal
+              </label>
+            </div>
+          </div>
+
+          {/* Conditions */}
+          <SectionHeader>Airport conditions</SectionHeader>
+          <div className="grid grid-cols-2 gap-3 text-[13px]">
+            <Field label="Security queue (min)">
+              <input
+                type="number"
+                min={0}
+                value={input.airport_conditions.security_queue_wait_min}
                 onChange={(e) =>
-                  setInput({
-                    ...input,
-                    outbound_flight: { ...input.outbound_flight, terminal_layout: e.target.value },
+                  updateConditions({ security_queue_wait_min: Number(e.target.value) || 0 })
+                }
+                className="w-full border border-border px-3 py-2 font-mono"
+              />
+            </Field>
+            <Field label="Immigration (min)">
+              <input
+                type="number"
+                min={0}
+                value={input.airport_conditions.immigration_queue_min}
+                onChange={(e) =>
+                  updateConditions({ immigration_queue_min: Number(e.target.value) || 0 })
+                }
+                className="w-full border border-border px-3 py-2 font-mono"
+              />
+            </Field>
+            <Field label="Crowd density">
+              <select
+                value={input.airport_conditions.crowd_density}
+                onChange={(e) =>
+                  updateConditions({
+                    crowd_density: e.target.value as "low" | "moderate" | "high",
                   })
                 }
                 className="w-full border border-border px-3 py-2"
-              />
+              >
+                <option value="low">Low</option>
+                <option value="moderate">Moderate</option>
+                <option value="high">High</option>
+              </select>
             </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Security queue (min)">
-                <input
-                  type="number"
-                  min={0}
-                  value={input.airport_conditions.security_queue_wait_min}
-                  onChange={(e) =>
-                    setInput({
-                      ...input,
-                      airport_conditions: {
-                        ...input.airport_conditions,
-                        security_queue_wait_min: Number(e.target.value) || 0,
-                      },
-                    })
-                  }
-                  className="w-full border border-border px-3 py-2 font-mono"
-                />
-              </Field>
-              <Field label="Immigration (min)">
-                <input
-                  type="number"
-                  min={0}
-                  value={input.airport_conditions.immigration_queue_min}
-                  onChange={(e) =>
-                    setInput({
-                      ...input,
-                      airport_conditions: {
-                        ...input.airport_conditions,
-                        immigration_queue_min: Number(e.target.value) || 0,
-                      },
-                    })
-                  }
-                  className="w-full border border-border px-3 py-2 font-mono"
-                />
-              </Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Luggage">
-                <select
-                  value={input.passenger_profile.luggage}
-                  onChange={(e) =>
-                    setInput({
-                      ...input,
-                      passenger_profile: {
-                        ...input.passenger_profile,
-                        luggage: e.target.value as ConnectionInput["passenger_profile"]["luggage"],
-                      },
-                    })
-                  }
-                  className="w-full border border-border px-3 py-2"
-                >
-                  <option value="carry_on_only">Carry-on only</option>
-                  <option value="checked">Checked</option>
-                  <option value="both">Both</option>
-                </select>
-              </Field>
-              <Field label="Mobility">
-                <select
-                  value={input.passenger_profile.mobility}
-                  onChange={(e) =>
-                    setInput({
-                      ...input,
-                      passenger_profile: {
-                        ...input.passenger_profile,
-                        mobility: e.target.value as ConnectionInput["passenger_profile"]["mobility"],
-                      },
-                    })
-                  }
-                  className="w-full border border-border px-3 py-2"
-                >
-                  <option value="standard">Standard</option>
-                  <option value="limited">Limited</option>
-                  <option value="wheelchair">Wheelchair</option>
-                </select>
-              </Field>
-            </div>
-            <div className="flex items-center gap-4 pt-1">
+            <div className="flex flex-col gap-1.5 justify-end pb-1">
               <label className="flex items-center gap-2 text-[12px] font-ui">
                 <input
                   type="checkbox"
                   checked={input.airport_conditions.fast_track_available}
-                  onChange={(e) =>
-                    setInput({
-                      ...input,
-                      airport_conditions: {
-                        ...input.airport_conditions,
-                        fast_track_available: e.target.checked,
-                      },
-                    })
-                  }
+                  onChange={(e) => updateConditions({ fast_track_available: e.target.checked })}
                 />
-                Fast-track immigration
+                Fast-track
               </label>
               <label className="flex items-center gap-2 text-[12px] font-ui">
                 <input
                   type="checkbox"
                   checked={input.airport_conditions.train_available}
-                  onChange={(e) =>
-                    setInput({
-                      ...input,
-                      airport_conditions: {
-                        ...input.airport_conditions,
-                        train_available: e.target.checked,
-                      },
-                    })
-                  }
+                  onChange={(e) => updateConditions({ train_available: e.target.checked })}
                 />
-                Train available
+                Train
               </label>
             </div>
           </div>
@@ -301,6 +430,21 @@ function ConnectionConfidencePage() {
             >
               <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${auto ? "animate-spin-slow" : ""}`} />
               {auto ? `Auto ${countdown}s` : "Auto off"}
+            </button>
+            <button
+              onClick={() => (alertsOn ? setAlertsOn(false) : enableAlerts())}
+              className={`px-3 py-2.5 text-[11px] font-ui font-bold uppercase tracking-wider border ${
+                alertsOn
+                  ? "bg-accent text-white border-accent"
+                  : "bg-white text-primary border-border"
+              }`}
+              title={`Alert when score drops below ${ALERT_THRESHOLD}%`}
+            >
+              {alertsOn ? (
+                <Bell className="w-3.5 h-3.5 inline" />
+              ) : (
+                <BellOff className="w-3.5 h-3.5 inline" />
+              )}
             </button>
           </div>
         </section>
@@ -332,7 +476,6 @@ function ConnectionConfidencePage() {
                 exit={{ opacity: 0 }}
                 className="space-y-4"
               >
-                {/* Score */}
                 <div
                   className="bg-white border-l-4 border border-border p-6"
                   style={{ borderLeftColor: riskColor }}
@@ -383,7 +526,6 @@ function ConnectionConfidencePage() {
                   </p>
                 </div>
 
-                {/* Critical Path */}
                 <div className="bg-white border border-border p-5">
                   <h3 className="font-display font-extrabold text-primary mb-3">Critical Path</h3>
                   <ol className="space-y-2">
@@ -398,7 +540,9 @@ function ConnectionConfidencePage() {
                         <span className="flex-1 font-sans">
                           <b>{s.step}</b>
                           {s.note && (
-                            <span className="text-[11px] text-muted-foreground ml-2">— {s.note}</span>
+                            <span className="text-[11px] text-muted-foreground ml-2">
+                              — {s.note}
+                            </span>
                           )}
                         </span>
                         <span className="font-mono font-bold text-accent">{s.duration_min}m</span>
@@ -407,7 +551,6 @@ function ConnectionConfidencePage() {
                   </ol>
                 </div>
 
-                {/* Actions */}
                 <div className="bg-primary/5 border border-primary/20 p-5">
                   <h3 className="font-display font-extrabold text-primary mb-3">
                     Recommended Actions
@@ -438,5 +581,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </span>
       {children}
     </label>
+  );
+}
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-[11px] font-ui font-bold uppercase tracking-wider text-muted-foreground mt-5 mb-2 pb-1 border-b border-border">
+      {children}
+    </h2>
   );
 }
