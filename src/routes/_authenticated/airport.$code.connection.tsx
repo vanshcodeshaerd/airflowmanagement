@@ -193,15 +193,28 @@ function ConnectionConfidencePage() {
   const removeSub = useServerFn(removePushSubscription);
   const sendPush = useServerFn(sendPushToSelf);
   const [pushOn, setPushOn] = useState(false);
+  const [pushSupport, setPushSupport] = useState(true);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [pushBusy, setPushBusy] = useState<null | "enable" | "disable" | "resub" | "test">(null);
 
-  // Restore push state on mount
+  // Refresh push/permission state (on mount + when tab regains focus)
+  const refreshPushState = async () => {
+    if (!pushSupported()) {
+      setPushSupport(false);
+      setPermission("unsupported");
+      return;
+    }
+    setPushSupport(true);
+    setPermission(Notification.permission);
+    const reg = await navigator.serviceWorker.getRegistration("/");
+    const sub = reg ? await reg.pushManager.getSubscription() : null;
+    setPushOn(!!sub);
+  };
   useEffect(() => {
-    if (!pushSupported()) return;
-    navigator.serviceWorker.getRegistration("/").then(async (reg) => {
-      if (!reg) return;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) setPushOn(true);
-    });
+    refreshPushState();
+    const onFocus = () => refreshPushState();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []);
 
   // Push alert when score drops below threshold
