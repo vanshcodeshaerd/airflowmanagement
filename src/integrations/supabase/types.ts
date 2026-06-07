@@ -1134,6 +1134,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_travel_profile: {
+        Row: {
+          age_group: string
+          created_at: string
+          luggage: string
+          mobility: string
+          sprint_capable: string
+          updated_at: string
+          user_id: string
+          walking_speed_kmh: number
+          walking_speed_samples: Json
+        }
+        Insert: {
+          age_group?: string
+          created_at?: string
+          luggage?: string
+          mobility?: string
+          sprint_capable?: string
+          updated_at?: string
+          user_id: string
+          walking_speed_kmh?: number
+          walking_speed_samples?: Json
+        }
+        Update: {
+          age_group?: string
+          created_at?: string
+          luggage?: string
+          mobility?: string
+          sprint_capable?: string
+          updated_at?: string
+          user_id?: string
+          walking_speed_kmh?: number
+          walking_speed_samples?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       booking: {
