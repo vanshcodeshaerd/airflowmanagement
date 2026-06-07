@@ -260,6 +260,7 @@ function ConnectionConfidencePage() {
 
   const togglePush = async () => {
     if (pushOn) {
+      setPushBusy("disable");
       try {
         const endpoint = await unsubscribeFromPush();
         if (endpoint) await removeSub({ data: { endpoint } });
@@ -267,9 +268,13 @@ function ConnectionConfidencePage() {
         toast.success("Background push disabled");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Failed to disable push");
+      } finally {
+        setPushBusy(null);
+        refreshPushState();
       }
       return;
     }
+    setPushBusy("enable");
     try {
       const sub = await subscribeToPush();
       await saveSub({ data: sub });
@@ -277,10 +282,31 @@ function ConnectionConfidencePage() {
       toast.success("Background push enabled — alerts work even with the tab closed");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to enable push");
+    } finally {
+      setPushBusy(null);
+      refreshPushState();
+    }
+  };
+
+  const resubscribePush = async () => {
+    setPushBusy("resub");
+    try {
+      const oldEndpoint = await unsubscribeFromPush();
+      if (oldEndpoint) await removeSub({ data: { endpoint: oldEndpoint } }).catch(() => {});
+      const sub = await subscribeToPush();
+      await saveSub({ data: sub });
+      setPushOn(true);
+      toast.success("Resubscribed — new device token saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to resubscribe");
+    } finally {
+      setPushBusy(null);
+      refreshPushState();
     }
   };
 
   const sendTestPush = async () => {
+    setPushBusy("test");
     try {
       const res = await sendPush({
         data: {
@@ -293,6 +319,8 @@ function ConnectionConfidencePage() {
       toast.success(`Sent to ${res.sent} device(s)`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to send");
+    } finally {
+      setPushBusy(null);
     }
   };
 
