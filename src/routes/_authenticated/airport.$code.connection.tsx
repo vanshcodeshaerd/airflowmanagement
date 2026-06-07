@@ -134,6 +134,28 @@ function ConnectionConfidencePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const speedMutation = useMutation({
+    mutationFn: (vars: { airport_code: string; speed_kmh: number }) =>
+      recordSpeed({ data: vars }),
+    onSuccess: (r) => {
+      const avg = (r as { avg?: number } | undefined)?.avg;
+      if (typeof avg === "number") {
+        updatePassenger({ walking_speed_kmh: Math.round(avg * 100) / 100 });
+        toast.success(`Walk logged. New avg: ${avg.toFixed(2)} km/h`);
+      } else {
+        toast.success("Walk logged");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Tick walk timer
+  useEffect(() => {
+    if (walkStart === null) return;
+    const id = setInterval(() => setWalkElapsed(Date.now() - walkStart), 1000);
+    return () => clearInterval(id);
+  }, [walkStart]);
+
   const result: ConnectionResult | undefined = mutation.data;
 
   // Auto-refresh
