@@ -26,6 +26,8 @@ import {
   saveTravelProfile,
   type TravelProfile,
 } from "@/lib/travel-profile.functions";
+import { fetchLiveFlight } from "@/lib/aerodatabox.functions";
+import { Plane } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/airport/$code/connection")({
   component: ConnectionConfidencePage,
@@ -70,11 +72,13 @@ function ConnectionConfidencePage() {
   const fn = useServerFn(predictConnectionConfidence);
   const getProfile = useServerFn(getTravelProfile);
   const saveProfile = useServerFn(saveTravelProfile);
+  const fetchLive = useServerFn(fetchLiveFlight);
 
   const [input, setInput] = useState<ConnectionInput>(DEFAULTS);
   const [auto, setAuto] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [alertsOn, setAlertsOn] = useState(false);
+  const [liveFlightNumber, setLiveFlightNumber] = useState("");
   const lastAlertedAt = useRef<number>(0);
 
   // Load saved profile on mount
@@ -97,6 +101,32 @@ function ConnectionConfidencePage() {
 
   const mutation = useMutation({
     mutationFn: (data: ConnectionInput) => fn({ data }),
+  });
+
+  const liveMutation = useMutation({
+    mutationFn: (flight_number: string) => fetchLive({ data: { flight_number } }),
+    onSuccess: (rows) => {
+      if (!rows || rows.length === 0) {
+        toast.error("No live data found for that flight today");
+        return;
+      }
+      const f = rows[0];
+      setInput((s) => ({
+        ...s,
+        inbound_flight: {
+          ...s.inbound_flight,
+          current_live_delay_min: Math.max(0, f.delay_minutes),
+          gate_arrival: f.destination_gate || s.inbound_flight.gate_arrival,
+          scheduled_landing: f.arrival_scheduled
+            ? new Date(f.arrival_scheduled).toISOString().slice(11, 16) + " UTC"
+            : s.inbound_flight.scheduled_landing,
+        },
+      }));
+      toast.success(
+        `Live: ${f.flight_number} ${f.status} — delay ${Math.max(0, f.delay_minutes)}m`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const result: ConnectionResult | undefined = mutation.data;
@@ -286,6 +316,29 @@ function ConnectionConfidencePage() {
 
           {/* Flights */}
           <SectionHeader>Flights</SectionHeader>
+          <div className="flex items-end gap-2 mb-3">
+            <Field label="Live flight # (e.g. EK503)">
+              <input
+                value={liveFlightNumber}
+                onChange={(e) => setLiveFlightNumber(e.target.value.toUpperCase())}
+                placeholder="AI201"
+                className="w-full border border-border px-3 py-2 font-mono uppercase"
+              />
+            </Field>
+            <button
+              onClick={() => liveMutation.mutate(liveFlightNumber.trim())}
+              disabled={liveMutation.isPending || liveFlightNumber.trim().length < 3}
+              className="h-[38px] px-3 border border-accent text-accent hover:bg-accent hover:text-white text-[11px] font-ui font-bold uppercase tracking-wider inline-flex items-center gap-1.5 disabled:opacity-50"
+              title="Fetch live flight status from AeroDataBox"
+            >
+              {liveMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Plane className="w-3.5 h-3.5" />
+              )}
+              Pull live
+            </button>
+          </div>
           <div className="grid grid-cols-2 gap-3 text-[13px]">
             <Field label="Inbound delay (min)">
               <input
