@@ -286,7 +286,14 @@ export function AirportDashboard({ code }: Props) {
         </div>
 
         {/* Quick links */}
-        <section className="bg-muted mt-10 p-7 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="bg-muted mt-10 p-7 grid grid-cols-2 md:grid-cols-5 gap-4">
+          <QuickLink
+            icon={<Brain className="w-5 h-5" />}
+            label="Will I Make It? (AI)"
+            onClick={() =>
+              navigate({ to: "/airport/$code/connection", params: { code } } as never)
+            }
+          />
           <QuickLink
             icon={<Map className="w-5 h-5" />}
             label="Directions"
