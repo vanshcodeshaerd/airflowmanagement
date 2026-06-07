@@ -316,6 +316,29 @@ function ConnectionConfidencePage() {
 
           {/* Flights */}
           <SectionHeader>Flights</SectionHeader>
+          <div className="flex items-end gap-2 mb-3">
+            <Field label="Live flight # (e.g. EK503)">
+              <input
+                value={liveFlightNumber}
+                onChange={(e) => setLiveFlightNumber(e.target.value.toUpperCase())}
+                placeholder="AI201"
+                className="w-full border border-border px-3 py-2 font-mono uppercase"
+              />
+            </Field>
+            <button
+              onClick={() => liveMutation.mutate(liveFlightNumber.trim())}
+              disabled={liveMutation.isPending || liveFlightNumber.trim().length < 3}
+              className="h-[38px] px-3 border border-accent text-accent hover:bg-accent hover:text-white text-[11px] font-ui font-bold uppercase tracking-wider inline-flex items-center gap-1.5 disabled:opacity-50"
+              title="Fetch live flight status from AeroDataBox"
+            >
+              {liveMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Plane className="w-3.5 h-3.5" />
+              )}
+              Pull live
+            </button>
+          </div>
           <div className="grid grid-cols-2 gap-3 text-[13px]">
             <Field label="Inbound delay (min)">
               <input
