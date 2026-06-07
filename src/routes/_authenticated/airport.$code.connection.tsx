@@ -13,6 +13,10 @@ import {
   Loader2,
   Bell,
   BellOff,
+  BellRing,
+  ShieldAlert,
+  Send,
+  RotateCw,
   Save,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -189,15 +193,28 @@ function ConnectionConfidencePage() {
   const removeSub = useServerFn(removePushSubscription);
   const sendPush = useServerFn(sendPushToSelf);
   const [pushOn, setPushOn] = useState(false);
+  const [pushSupport, setPushSupport] = useState(true);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [pushBusy, setPushBusy] = useState<null | "enable" | "disable" | "resub" | "test">(null);
 
-  // Restore push state on mount
+  // Refresh push/permission state (on mount + when tab regains focus)
+  const refreshPushState = async () => {
+    if (!pushSupported()) {
+      setPushSupport(false);
+      setPermission("unsupported");
+      return;
+    }
+    setPushSupport(true);
+    setPermission(Notification.permission);
+    const reg = await navigator.serviceWorker.getRegistration("/");
+    const sub = reg ? await reg.pushManager.getSubscription() : null;
+    setPushOn(!!sub);
+  };
   useEffect(() => {
-    if (!pushSupported()) return;
-    navigator.serviceWorker.getRegistration("/").then(async (reg) => {
-      if (!reg) return;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) setPushOn(true);
-    });
+    refreshPushState();
+    const onFocus = () => refreshPushState();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []);
 
   // Push alert when score drops below threshold
@@ -243,6 +260,7 @@ function ConnectionConfidencePage() {
 
   const togglePush = async () => {
     if (pushOn) {
+      setPushBusy("disable");
       try {
         const endpoint = await unsubscribeFromPush();
         if (endpoint) await removeSub({ data: { endpoint } });
@@ -250,9 +268,13 @@ function ConnectionConfidencePage() {
         toast.success("Background push disabled");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Failed to disable push");
+      } finally {
+        setPushBusy(null);
+        refreshPushState();
       }
       return;
     }
+    setPushBusy("enable");
     try {
       const sub = await subscribeToPush();
       await saveSub({ data: sub });
@@ -260,10 +282,31 @@ function ConnectionConfidencePage() {
       toast.success("Background push enabled — alerts work even with the tab closed");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to enable push");
+    } finally {
+      setPushBusy(null);
+      refreshPushState();
+    }
+  };
+
+  const resubscribePush = async () => {
+    setPushBusy("resub");
+    try {
+      const oldEndpoint = await unsubscribeFromPush();
+      if (oldEndpoint) await removeSub({ data: { endpoint: oldEndpoint } }).catch(() => {});
+      const sub = await subscribeToPush();
+      await saveSub({ data: sub });
+      setPushOn(true);
+      toast.success("Resubscribed — new device token saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to resubscribe");
+    } finally {
+      setPushBusy(null);
+      refreshPushState();
     }
   };
 
   const sendTestPush = async () => {
+    setPushBusy("test");
     try {
       const res = await sendPush({
         data: {
@@ -276,6 +319,8 @@ function ConnectionConfidencePage() {
       toast.success(`Sent to ${res.sent} device(s)`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to send");
+    } finally {
+      setPushBusy(null);
     }
   };
 
@@ -662,24 +707,123 @@ function ConnectionConfidencePage() {
                 <BellOff className="w-3.5 h-3.5 inline" />
               )}
             </button>
-            <button
-              onClick={togglePush}
-              className={`px-3 py-2.5 text-[11px] font-ui font-bold uppercase tracking-wider border ${
-                pushOn ? "bg-primary text-white border-primary" : "bg-white text-primary border-border"
-              }`}
-              title="Background push (works with tab closed)"
-            >
-              {pushOn ? "Push on" : "Push off"}
-            </button>
-            {pushOn && (
+          </div>
+
+          {/* Push notification status panel */}
+          <div className="mt-3 border border-border bg-white p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                {pushOn && permission === "granted" ? (
+                  <BellRing className="w-4 h-4 text-primary" />
+                ) : permission === "denied" ? (
+                  <ShieldAlert className="w-4 h-4 text-destructive" />
+                ) : (
+                  <BellOff className="w-4 h-4 text-muted-foreground" />
+                )}
+                <span className="font-ui font-bold uppercase tracking-wider text-[11px] text-primary">
+                  Background push
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-ui font-bold uppercase tracking-wider border ${
+                    !pushSupport
+                      ? "bg-muted text-muted-foreground border-border"
+                      : permission === "granted"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : permission === "denied"
+                      ? "bg-destructive/10 text-destructive border-destructive/30"
+                      : "bg-amber-50 text-amber-700 border-amber-200"
+                  }`}
+                  title="Browser notification permission"
+                >
+                  {!pushSupport
+                    ? "Unsupported"
+                    : permission === "granted"
+                    ? "Permission ✓"
+                    : permission === "denied"
+                    ? "Blocked"
+                    : "Not asked"}
+                </span>
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-ui font-bold uppercase tracking-wider border ${
+                    pushOn
+                      ? "bg-primary text-white border-primary"
+                      : "bg-white text-muted-foreground border-border"
+                  }`}
+                  title="Server subscription state"
+                >
+                  {pushOn ? "Subscribed" : "Not subscribed"}
+                </span>
+              </div>
+            </div>
+
+            {permission === "denied" && (
+              <div className="text-[11px] text-destructive/90 bg-destructive/5 border border-destructive/20 px-2 py-1.5 mb-2 leading-snug">
+                Notifications are blocked at the browser level. To recover: click
+                the lock/site-info icon next to the URL → Notifications → Allow,
+                then return here and tap <strong>Refresh status</strong>.
+              </div>
+            )}
+            {!pushSupport && (
+              <div className="text-[11px] text-muted-foreground bg-muted/40 border border-border px-2 py-1.5 mb-2 leading-snug">
+                This browser does not support web push. On iOS, install the app
+                to your Home Screen first, then re-open it from there.
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={togglePush}
+                disabled={!pushSupport || permission === "denied" || pushBusy !== null}
+                className={`px-3 py-1.5 text-[11px] font-ui font-bold uppercase tracking-wider border inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed ${
+                  pushOn ? "bg-primary text-white border-primary" : "bg-white text-primary border-border"
+                }`}
+              >
+                {pushBusy === "enable" || pushBusy === "disable" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : pushOn ? (
+                  <BellRing className="w-3.5 h-3.5" />
+                ) : (
+                  <Bell className="w-3.5 h-3.5" />
+                )}
+                {pushOn ? "Disable" : "Enable"}
+              </button>
+              <button
+                onClick={resubscribePush}
+                disabled={!pushSupport || permission === "denied" || pushBusy !== null}
+                className="px-3 py-1.5 text-[11px] font-ui font-bold uppercase tracking-wider border bg-white text-primary border-border inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Force a fresh subscription (fixes stale device tokens)"
+              >
+                {pushBusy === "resub" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RotateCw className="w-3.5 h-3.5" />
+                )}
+                Resubscribe
+              </button>
               <button
                 onClick={sendTestPush}
-                className="px-3 py-2.5 text-[11px] font-ui font-bold uppercase tracking-wider border bg-white text-primary border-border"
-                title="Send a test push"
+                disabled={!pushOn || pushBusy !== null}
+                className="px-3 py-1.5 text-[11px] font-ui font-bold uppercase tracking-wider border bg-white text-primary border-border inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
               >
+                {pushBusy === "test" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
                 Test
               </button>
-            )}
+              <button
+                onClick={refreshPushState}
+                disabled={pushBusy !== null}
+                className="px-3 py-1.5 text-[11px] font-ui font-bold uppercase tracking-wider border bg-white text-muted-foreground border-border inline-flex items-center gap-1.5 disabled:opacity-40"
+                title="Recheck permission & subscription"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Refresh status
+              </button>
+            </div>
           </div>
         </section>
 
