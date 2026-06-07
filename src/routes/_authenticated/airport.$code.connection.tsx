@@ -29,6 +29,16 @@ import {
 } from "@/lib/travel-profile.functions";
 import { fetchLiveFlight } from "@/lib/aerodatabox.functions";
 import { Plane, Footprints, Play, Square } from "lucide-react";
+import {
+  savePushSubscription,
+  removePushSubscription,
+  sendPushToSelf,
+} from "@/lib/push.functions";
+import {
+  pushSupported,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push-client";
 
 export const Route = createFileRoute("/_authenticated/airport/$code/connection")({
   component: ConnectionConfidencePage,
@@ -175,6 +185,21 @@ function ConnectionConfidencePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auto, input]);
 
+  const saveSub = useServerFn(savePushSubscription);
+  const removeSub = useServerFn(removePushSubscription);
+  const sendPush = useServerFn(sendPushToSelf);
+  const [pushOn, setPushOn] = useState(false);
+
+  // Restore push state on mount
+  useEffect(() => {
+    if (!pushSupported()) return;
+    navigator.serviceWorker.getRegistration("/").then(async (reg) => {
+      if (!reg) return;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) setPushOn(true);
+    });
+  }, []);
+
   // Push alert when score drops below threshold
   useEffect(() => {
     if (!result || !alertsOn) return;
@@ -192,7 +217,13 @@ function ConnectionConfidencePage() {
         /* ignore */
       }
     }
-  }, [result, alertsOn]);
+    // Background push (works even if tab is closed)
+    if (pushOn) {
+      sendPush({ data: { title, body, url: window.location.pathname, tag: "connection-alert" } }).catch(
+        () => {}
+      );
+    }
+  }, [result, alertsOn, pushOn, sendPush]);
 
   const enableAlerts = async () => {
     if (typeof Notification === "undefined") {
@@ -208,6 +239,44 @@ function ConnectionConfidencePage() {
     }
     setAlertsOn(true);
     toast.success(`Alerts on — you'll be notified below ${ALERT_THRESHOLD}%`);
+  };
+
+  const togglePush = async () => {
+    if (pushOn) {
+      try {
+        const endpoint = await unsubscribeFromPush();
+        if (endpoint) await removeSub({ data: { endpoint } });
+        setPushOn(false);
+        toast.success("Background push disabled");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to disable push");
+      }
+      return;
+    }
+    try {
+      const sub = await subscribeToPush();
+      await saveSub({ data: sub });
+      setPushOn(true);
+      toast.success("Background push enabled — alerts work even with the tab closed");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to enable push");
+    }
+  };
+
+  const sendTestPush = async () => {
+    try {
+      const res = await sendPush({
+        data: {
+          title: "Test push ✈️",
+          body: "Background notifications are working.",
+          url: window.location.pathname,
+          tag: "test",
+        },
+      });
+      toast.success(`Sent to ${res.sent} device(s)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to send");
+    }
   };
 
   const riskColor = useMemo(() => {
@@ -593,6 +662,24 @@ function ConnectionConfidencePage() {
                 <BellOff className="w-3.5 h-3.5 inline" />
               )}
             </button>
+            <button
+              onClick={togglePush}
+              className={`px-3 py-2.5 text-[11px] font-ui font-bold uppercase tracking-wider border ${
+                pushOn ? "bg-primary text-white border-primary" : "bg-white text-primary border-border"
+              }`}
+              title="Background push (works with tab closed)"
+            >
+              {pushOn ? "Push on" : "Push off"}
+            </button>
+            {pushOn && (
+              <button
+                onClick={sendTestPush}
+                className="px-3 py-2.5 text-[11px] font-ui font-bold uppercase tracking-wider border bg-white text-primary border-border"
+                title="Send a test push"
+              >
+                Test
+              </button>
+            )}
           </div>
         </section>
 
