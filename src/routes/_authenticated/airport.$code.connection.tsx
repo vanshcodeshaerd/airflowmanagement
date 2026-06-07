@@ -24,10 +24,11 @@ import {
 import {
   getTravelProfile,
   saveTravelProfile,
+  recordWalkingSpeedSample,
   type TravelProfile,
 } from "@/lib/travel-profile.functions";
 import { fetchLiveFlight } from "@/lib/aerodatabox.functions";
-import { Plane } from "lucide-react";
+import { Plane, Footprints, Play, Square } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/airport/$code/connection")({
   component: ConnectionConfidencePage,
