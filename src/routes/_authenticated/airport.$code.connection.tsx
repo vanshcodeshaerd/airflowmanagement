@@ -24,10 +24,11 @@ import {
 import {
   getTravelProfile,
   saveTravelProfile,
+  recordWalkingSpeedSample,
   type TravelProfile,
 } from "@/lib/travel-profile.functions";
 import { fetchLiveFlight } from "@/lib/aerodatabox.functions";
-import { Plane } from "lucide-react";
+import { Plane, Footprints, Play, Square } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/airport/$code/connection")({
   component: ConnectionConfidencePage,
@@ -73,12 +74,16 @@ function ConnectionConfidencePage() {
   const getProfile = useServerFn(getTravelProfile);
   const saveProfile = useServerFn(saveTravelProfile);
   const fetchLive = useServerFn(fetchLiveFlight);
+  const recordSpeed = useServerFn(recordWalkingSpeedSample);
 
   const [input, setInput] = useState<ConnectionInput>(DEFAULTS);
   const [auto, setAuto] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [alertsOn, setAlertsOn] = useState(false);
   const [liveFlightNumber, setLiveFlightNumber] = useState("");
+  const [walkStart, setWalkStart] = useState<number | null>(null);
+  const [walkElapsed, setWalkElapsed] = useState(0);
+  const [walkDistance, setWalkDistance] = useState<number>(500);
   const lastAlertedAt = useRef<number>(0);
 
   // Load saved profile on mount
@@ -128,6 +133,28 @@ function ConnectionConfidencePage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const speedMutation = useMutation({
+    mutationFn: (vars: { airport_code: string; speed_kmh: number }) =>
+      recordSpeed({ data: vars }),
+    onSuccess: (r) => {
+      const avg = (r as { avg?: number } | undefined)?.avg;
+      if (typeof avg === "number") {
+        updatePassenger({ walking_speed_kmh: Math.round(avg * 100) / 100 });
+        toast.success(`Walk logged. New avg: ${avg.toFixed(2)} km/h`);
+      } else {
+        toast.success("Walk logged");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Tick walk timer
+  useEffect(() => {
+    if (walkStart === null) return;
+    const id = setInterval(() => setWalkElapsed(Date.now() - walkStart), 1000);
+    return () => clearInterval(id);
+  }, [walkStart]);
 
   const result: ConnectionResult | undefined = mutation.data;
 
@@ -312,6 +339,73 @@ function ConnectionConfidencePage() {
               )}
               Save profile
             </button>
+          </div>
+
+          {/* Walking speed recorder */}
+          <div className="mt-4 bg-primary/5 border border-primary/20 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-ui font-bold uppercase tracking-wider text-primary inline-flex items-center gap-1.5">
+                <Footprints className="w-3.5 h-3.5" /> Walk recorder
+              </p>
+              <span className="font-mono text-[12px] text-muted-foreground">
+                {Math.floor(walkElapsed / 60000)}:
+                {String(Math.floor((walkElapsed % 60000) / 1000)).padStart(2, "0")}
+              </span>
+            </div>
+            <div className="flex items-end gap-2">
+              <Field label="Distance (m)">
+                <input
+                  type="number"
+                  min={50}
+                  max={3000}
+                  value={walkDistance}
+                  onChange={(e) => setWalkDistance(Number(e.target.value) || 0)}
+                  className="w-full border border-border px-3 py-2 font-mono text-[13px]"
+                />
+              </Field>
+              {walkStart === null ? (
+                <button
+                  onClick={() => {
+                    setWalkElapsed(0);
+                    setWalkStart(Date.now());
+                  }}
+                  className="h-[38px] px-3 bg-accent text-white text-[11px] font-ui font-bold uppercase tracking-wider inline-flex items-center gap-1.5"
+                >
+                  <Play className="w-3.5 h-3.5" /> Start walk
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    const seconds = (Date.now() - walkStart) / 1000;
+                    setWalkStart(null);
+                    if (seconds < 5 || walkDistance < 50) {
+                      toast.error("Walk too short to log");
+                      return;
+                    }
+                    const kmh = walkDistance / 1000 / (seconds / 3600);
+                    if (kmh < 1 || kmh > 10) {
+                      toast.error(`Speed ${kmh.toFixed(1)} km/h out of range`);
+                      return;
+                    }
+                    speedMutation.mutate({
+                      airport_code: code,
+                      speed_kmh: Math.round(kmh * 100) / 100,
+                    });
+                  }}
+                  className="h-[38px] px-3 bg-primary text-white text-[11px] font-ui font-bold uppercase tracking-wider inline-flex items-center gap-1.5"
+                >
+                  {speedMutation.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Square className="w-3.5 h-3.5" />
+                  )}
+                  Stop & log
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2 font-sans">
+              Auto-updates your average walking speed for {code}.
+            </p>
           </div>
 
           {/* Flights */}
