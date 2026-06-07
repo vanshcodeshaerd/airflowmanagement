@@ -103,6 +103,32 @@ function ConnectionConfidencePage() {
     mutationFn: (data: ConnectionInput) => fn({ data }),
   });
 
+  const liveMutation = useMutation({
+    mutationFn: (flight_number: string) => fetchLive({ data: { flight_number } }),
+    onSuccess: (rows) => {
+      if (!rows || rows.length === 0) {
+        toast.error("No live data found for that flight today");
+        return;
+      }
+      const f = rows[0];
+      setInput((s) => ({
+        ...s,
+        inbound_flight: {
+          ...s.inbound_flight,
+          current_live_delay_min: Math.max(0, f.delay_minutes),
+          gate_arrival: f.destination_gate || s.inbound_flight.gate_arrival,
+          scheduled_landing: f.arrival_scheduled
+            ? new Date(f.arrival_scheduled).toISOString().slice(11, 16) + " UTC"
+            : s.inbound_flight.scheduled_landing,
+        },
+      }));
+      toast.success(
+        `Live: ${f.flight_number} ${f.status} — delay ${Math.max(0, f.delay_minutes)}m`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const result: ConnectionResult | undefined = mutation.data;
 
   // Auto-refresh
