@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { lovable } from "@/integrations/lovable";
 
 export function SocialAuthButtons({
   mode,
@@ -8,11 +10,17 @@ export function SocialAuthButtons({
   mode: "login" | "signup";
   onSwitchTab: () => void;
 }) {
+  const navigate = useNavigate();
   const handleGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/user-dashboard` },
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
+    if (result.error) {
+      toast.error(result.error.message || "Google sign-in failed");
+      return;
+    }
+    if (result.redirected) return;
+    navigate({ to: "/dashboard/airports" });
   };
 
   return (
