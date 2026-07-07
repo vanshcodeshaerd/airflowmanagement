@@ -13,41 +13,24 @@ import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 
-function RealtimeSync() {
+function AuthSync() {
   const queryClient = useQueryClient();
   const router = useRouter();
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const tables = [
-      "flights",
-      "boarding_passes",
-      "bookings",
-      "passenger_notifications",
-      "flight_gate_assignments",
-      "flight_status_history",
-      "passenger",
-      "payment",
-      "baggage",
-      "check_in",
-      "flight_stops",
-      "aircraft_model",
-      "terminal",
-      "location",
-    ];
-    const channel = supabase.channel("admin-user-sync");
-    for (const table of tables) {
-      channel.on(
-        "postgres_changes",
-        { event: "*", schema: "public", table },
-        () => {
-          queryClient.invalidateQueries();
-          router.invalidate();
-        },
-      );
-    }
-    channel.subscribe();
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+
+      router.invalidate();
+      if (event === "SIGNED_OUT") {
+        queryClient.clear();
+        return;
+      }
+      if (session) queryClient.invalidateQueries();
+    });
+
     return () => {
-      supabase.removeChannel(channel);
+      data.subscription.unsubscribe();
     };
   }, [queryClient, router]);
   return null;
@@ -166,7 +149,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <RealtimeSync />
+      <AuthSync />
       <Outlet />
       <Toaster />
     </QueryClientProvider>
